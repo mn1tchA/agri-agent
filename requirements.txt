@@ -1,0 +1,20 @@
+fastapi==0.136.3
+uvicorn==0.48.0
+langgraph==1.2.1
+langchain-google-genai==4.2.3
+langchain-groq>=0.2.0
+pydantic==2.13.4
+pydantic-settings==2.14.1
+httpx==0.28.1
+tenacity==9.1.4
+langgraph-checkpoint-sqlite==3.1.0
+aiosqlite==0.22.1
+sqlmodel==0.0.38
+chromadb==1.5.9
+langchain-community==0.4.2
+python-dotenv==1.2.2
+fastmcp>=2.0.0
+slowapi>=0.1.9
+# Testing
+pytest>=8.0
+pytest-asyncio>=0.24

@@ -1,0 +1,18 @@
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# The context is the root directory, so we copy the frontend package.json
+COPY agri-dashboard/package*.json ./
+RUN npm install
+
+# Copy all frontend files
+COPY agri-dashboard/ .
+RUN npm run build
+
+# Stage 2: Serve via Nginx
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Create a simple nginx config to handle React router if needed (though Vite defaults are usually fine for simple apps)
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

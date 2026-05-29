@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  agri-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./chroma_db:/app/chroma_db
+      - ./history.db:/app/history.db
+      - ./checkpoints.sqlite:/app/checkpoints.sqlite
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  agri-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      # Map 5173 on host to 80 on Nginx container
+      - "5173:80"
+    depends_on:
+      agri-backend:
+        condition: service_healthy
+    restart: unless-stopped

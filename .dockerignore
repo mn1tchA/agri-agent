@@ -1,0 +1,8 @@
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.env
+checkpoints.sqlite
+history.db
+chroma_db/
