@@ -30,8 +30,11 @@ def _get_vectorstore() -> Chroma:
 def add_memory(text: str, metadata: dict | None = None) -> None:
     """Save a past decision into ChromaDB for future RAG retrieval."""
     log.info("Saving memory to ChromaDB: %s", text[:80])
-    vectorstore = _get_vectorstore()
-    vectorstore.add_texts(texts=[text], metadatas=[metadata] if metadata else [{}])
+    try:
+        vectorstore = _get_vectorstore()
+        vectorstore.add_texts(texts=[text], metadatas=[metadata] if metadata else [{}])
+    except Exception as e:
+        log.warning("Failed to save memory to ChromaDB: %s", e)
 
 
 def search_memory(query: str, k: int = 3, crop_type: str | None = None) -> list[str]:
