@@ -303,7 +303,7 @@ class TestDatabaseStats:
             "irrigate_count": 0,
             "wait_count": 0,
             "total_water_liters": 0.0,
-            "total_cost_dzd": 0.0,
+            "total_cost_usd": 0.0,
             "approval_rate": 0.0,
             "avg_soil_moisture": 0.0,
         }
@@ -314,7 +314,7 @@ class TestDatabaseStats:
         """Verify the expected keys exist in the return structure."""
         required_keys = {
             "total_decisions", "irrigate_count", "wait_count",
-            "total_water_liters", "total_cost_dzd", "approval_rate", "avg_soil_moisture",
+            "total_water_liters", "total_cost_usd", "approval_rate", "avg_soil_moisture",
         }
         from database import get_aggregate_stats
         # Call against the real (likely empty) test DB

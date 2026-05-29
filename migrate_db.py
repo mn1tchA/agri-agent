@@ -32,6 +32,21 @@ NEW_COLUMNS = [
     ("reasoning_confidence", "REAL", "0.0"),
     ("crop_value_at_risk_dzd", "REAL", "0.0"),
     ("outcome_rating", "INTEGER", "NULL"),
+    ("agronomist_analysis", "TEXT", "''"),
+    ("pedologist_analysis", "TEXT", "''"),
+    ("economist_analysis", "TEXT", "''"),
+    ("harvest_analysis", "TEXT", "''"),
+    ("orchestrator_analysis", "TEXT", "''"),
+    ("water_cost_usd", "REAL", "0.0"),
+    ("electricity_cost_usd", "REAL", "0.0"),
+    ("fuel_cost_usd", "REAL", "0.0"),
+    ("labor_cost_usd", "REAL", "0.0"),
+    ("total_operational_cost_usd", "REAL", "0.0"),
+    ("roi_score", "REAL", "0.0"),
+    ("crop_value_at_risk_usd", "REAL", "0.0"),
+    ("fertilizer_recommendation", "TEXT", "''"),
+    ("last_irrigation_date", "TEXT", "NULL"),
+    ("agent_votes", "TEXT", "'{}'"),
 ]
 
 

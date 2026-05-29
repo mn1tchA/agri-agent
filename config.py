@@ -12,9 +12,17 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    # --- API Keys ---
+    # --- API Keys & URLs ---
     google_api_key: str = ""   # Used for embeddings (RAG memory)
     groq_api_key: str = ""     # Used for LLM inference — get free key at console.groq.com
+    eppo_api_key: str = ""     # Optional EPPO Data Services API Key
+    soilgrids_url: str = "https://rest.isric.org/soilgrids/v2.0"
+
+    # --- Cost Model Defaults (USD) ---
+    default_water_rate_usd: float = 0.001       # USD per Liter
+    default_electricity_rate_usd: float = 0.12  # USD per kWh
+    default_fuel_price_usd: float = 1.05        # USD per Liter (Diesel)
+    default_labor_wage_usd: float = 15.00       # USD per Hour
 
     # --- LLM Backend ---
     # Set LLM_PROVIDER=groq in .env to use Groq (recommended — much higher free limits).

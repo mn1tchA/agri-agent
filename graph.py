@@ -11,14 +11,22 @@ Architecture (with anomaly detection + conditional fan-out/fan-in):
     │ (anomaly detected)                      │ (normal)
     ▼                                         ▼
 human_approval_gate               parallel_agents_fanout   ← pass-through
+                                       ┌─────┼─────┐
+                                       │     │     │
+                                 meteorologist botanist agronomist
+                                       └─────┼─────┘
+                                             ▼
+                                         pedologist
                                        ┌─────┴─────┐
-                                  meteorologist  botanist   ← parallel execution
+                                       ▼           ▼
+                                   economist    harvest
                                        └─────┬─────┘
-                                          financial          ← fan-in
+                                             ▼
+                                       orchestrator
                                              │
                                       [route_decision]
-                                          ├── "wait"     → END
-                                          └── "irrigate" → human_approval_gate → actuator → END
+                                           ├── "wait"     → END
+                                           └── "irrigate" / "micro_irrigate" → human_approval_gate → actuator → END
 """
 import logging
 from langgraph.graph import StateGraph, END
@@ -29,7 +37,11 @@ from nodes import (
     parallel_agents_fanout,
     meteorologist_agent_node,
     botanist_agent_node,
-    financial_agent_node,
+    agronomist_agent_node,
+    pedologist_agent_node,
+    economist_agent_node,
+    harvest_agent_node,
+    orchestrator_node,
     actuator_node,
 )
 
@@ -41,10 +53,10 @@ log = logging.getLogger("agri_agent.graph")
 # ---------------------------------------------------------------------------
 
 def route_decision(state: FarmState) -> str:
-    """Route after the Financial Director: irrigate → human gate, wait → END."""
+    """Route after the Orchestrator: irrigate/micro_irrigate → human gate, wait → END."""
     decision = state.get("decision", "wait")
     log.info("Routing decision: %s", decision)
-    if decision == "irrigate":
+    if decision in ("irrigate", "micro_irrigate"):
         return "human_approval_gate"
     return END
 
@@ -53,7 +65,7 @@ def route_after_anomaly_check(state: FarmState) -> str:
     """
     Route after anomaly detection:
       - Critical anomaly detected → human_approval_gate (bypass all LLM agents, zero wasted tokens)
-      - Normal readings           → parallel_agents_fanout (fans out to meteorologist + botanist)
+      - Normal readings           → parallel_agents_fanout (fans out to meteorologist + botanist + agronomist)
     """
     if state.get("anomaly_detected"):
         log.warning("Anomaly routing: → human_approval_gate (LLM agents bypassed)")
@@ -72,10 +84,6 @@ async def human_approval_gate(state: FarmState) -> dict:
 
     The graph serializes its full state to SQLite via AsyncSqliteSaver and pauses
     execution here until POST /api/actuate resumes it with human_approved=True/False.
-
-    Handles both:
-      - Normal irrigation approval (decision='irrigate')
-      - Anomaly review            (decision='anomaly')
     """
     return {}
 
@@ -94,7 +102,11 @@ def create_workflow() -> StateGraph:
     workflow.add_node("parallel_agents_fanout", parallel_agents_fanout)
     workflow.add_node("meteorologist",         meteorologist_agent_node)
     workflow.add_node("botanist",              botanist_agent_node)
-    workflow.add_node("financial",             financial_agent_node)
+    workflow.add_node("agronomist",            agronomist_agent_node)
+    workflow.add_node("pedologist",            pedologist_agent_node)
+    workflow.add_node("economist",             economist_agent_node)
+    workflow.add_node("harvest",               harvest_agent_node)
+    workflow.add_node("orchestrator",          orchestrator_node)
     workflow.add_node("human_approval_gate",   human_approval_gate)
     workflow.add_node("actuator",              actuator_node)
 
@@ -114,17 +126,27 @@ def create_workflow() -> StateGraph:
         },
     )
 
-    # --- Fan-Out: parallel_agents_fanout → meteorologist AND botanist (parallel) ---
+    # --- Fan-Out: parallel_agents_fanout → meteorologist, botanist, agronomist (parallel) ---
     workflow.add_edge("parallel_agents_fanout", "meteorologist")
     workflow.add_edge("parallel_agents_fanout", "botanist")
+    workflow.add_edge("parallel_agents_fanout", "agronomist")
 
-    # --- Fan-In: both agents → financial (waits for both to complete) ---
-    workflow.add_edge("meteorologist", "financial")
-    workflow.add_edge("botanist",      "financial")
+    # --- Fan-In: meteorologist, botanist, agronomist → pedologist (waits for all three) ---
+    workflow.add_edge("meteorologist", "pedologist")
+    workflow.add_edge("botanist",      "pedologist")
+    workflow.add_edge("agronomist",    "pedologist")
 
-    # --- Conditional routing after Financial Director ---
+    # --- Fan-Out: pedologist → economist, harvest (parallel) ---
+    workflow.add_edge("pedologist", "economist")
+    workflow.add_edge("pedologist", "harvest")
+
+    # --- Fan-In: economist, harvest → orchestrator (waits for both) ---
+    workflow.add_edge("economist", "orchestrator")
+    workflow.add_edge("harvest",   "orchestrator")
+
+    # --- Conditional routing after Orchestrator ---
     workflow.add_conditional_edges(
-        "financial",
+        "orchestrator",
         route_decision,
         {
             "human_approval_gate": "human_approval_gate",

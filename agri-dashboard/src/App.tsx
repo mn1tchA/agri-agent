@@ -4,7 +4,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import {
   Thermometer, Droplets, Sprout, CloudRain, Leaf,
   BadgeDollarSign, MapPin, Activity, ChevronRight,
-  Wind, Cpu, DollarSign, UserCheck,
+  Wind, Cpu, DollarSign, UserCheck, Layers, Calendar,
 } from 'lucide-react';
 
 import { Header } from './components/Header';
@@ -14,6 +14,8 @@ import { AgentReportCard } from './components/AgentReportCard';
 import { HumanApprovalGate } from './components/HumanApprovalGate';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { StatCard } from './components/StatCard';
+import { CropPlannerTab } from './components/CropPlannerTab';
+import { HarvestCalendar } from './components/HarvestCalendar';
 import { useAnalysis } from './hooks/useAnalysis';
 import type { FarmConfig } from './types';
 
@@ -25,6 +27,18 @@ const DEFAULT_CONFIG: FarmConfig = {
   longitude: -0.6328,
   waterSalinity: 1.2,
   plantGrowthStage: 'Vegetative Stage (High Water Demand)',
+  seedProfile: 'Standard',
+  upovId: '',
+  germinationRatePct: 85,
+  plantingDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
+  soilTexture: 'Loamy',
+  pumpType: 'Electric',
+  pumpKw: 5.5,
+  fuelUseLph: 0.0,
+  laborWorkers: 1,
+  laborHours: 2.0,
+  laborWageUsd: 15.0,
+  marketPriceUsdPerKg: 0.0,
 };
 
 const CAPABILITIES = [
@@ -80,17 +94,31 @@ function WelcomeBanner({ onRun }: { onRun: () => void }) {
   );
 }
 
+const getDaysSinceLastIrrigation = (dateStr?: string | null) => {
+  if (!dateStr) return '14 days ago';
+  try {
+    const lastDate = new Date(dateStr);
+    const diffTime = Math.abs(Date.now() - lastDate.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    return `${diffDays} days ago`;
+  } catch {
+    return '14 days ago';
+  }
+};
+
 function App() {
   const [config, setConfig] = useState<FarmConfig>(DEFAULT_CONFIG);
-  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'planner' | 'analytics'>('dashboard');
   const [hasStarted, setHasStarted] = useState(false);
 
   const { data, loading, hardwareStatus, currentStep, runAnalysis, handleApproval, submitFeedback, reset } = useAnalysis();
 
-  const handleRun = () => { setHasStarted(true); setShowAnalytics(false); runAnalysis(config); };
-  const handleReset = () => { reset(); setHasStarted(false); setShowAnalytics(false); };
+  const handleRun = () => { setHasStarted(true); setActiveTab('dashboard'); runAnalysis(config); };
+  const handleReset = () => { reset(); setHasStarted(false); setActiveTab('dashboard'); };
 
-  const showWelcome = !hasStarted && !data && !loading && !showAnalytics;
+  const showWelcome = !hasStarted && !data && !loading && activeTab === 'dashboard';
 
   return (
     <div className="min-h-screen p-4 md:p-8 overflow-x-hidden relative">
@@ -110,26 +138,69 @@ function App() {
       <div className="max-w-7xl mx-auto relative z-10">
         <Header
           loading={loading}
-          showAnalytics={showAnalytics}
+          showAnalytics={activeTab === 'analytics'}
           hasData={!!data}
-          onToggleAnalytics={() => setShowAnalytics(p => !p)}
+          onToggleAnalytics={() => setActiveTab(activeTab === 'analytics' ? 'dashboard' : 'analytics')}
           onRunAnalysis={handleRun}
           onReset={handleReset}
         />
 
+        {/* Custom sleek Tab bar right below the header */}
+        <div className="flex border-b border-white/[0.06] mb-6 gap-6 text-sm">
+          <button
+            className={`pb-2.5 font-medium transition-all relative ${
+              activeTab === 'dashboard' ? 'text-emerald-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            Dashboard
+            {activeTab === 'dashboard' && (
+              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 rounded-full" />
+            )}
+          </button>
+          <button
+            className={`pb-2.5 font-medium transition-all relative ${
+              activeTab === 'planner' ? 'text-emerald-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+            onClick={() => setActiveTab('planner')}
+          >
+            Crop Planner
+            {activeTab === 'planner' && (
+              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 rounded-full" />
+            )}
+          </button>
+          <button
+            className={`pb-2.5 font-medium transition-all relative ${
+              activeTab === 'analytics' ? 'text-emerald-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+            onClick={() => setActiveTab('analytics')}
+          >
+            Analytics
+            {activeTab === 'analytics' && (
+              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 rounded-full" />
+            )}
+          </button>
+        </div>
+
         <AgentTimeline currentStep={currentStep} loading={loading} />
 
-        {showAnalytics && (
+        {activeTab === 'analytics' && (
           <div className="animate-slide-up">
             <AnalyticsDashboard onFeedback={submitFeedback} />
           </div>
         )}
 
+        {activeTab === 'planner' && (
+          <div className="animate-slide-up">
+            <CropPlannerTab />
+          </div>
+        )}
+
         {showWelcome && <WelcomeBanner onRun={handleRun} />}
 
-        {!data && !showAnalytics && <FarmConfigPanel config={config} onChange={setConfig} />}
+        {!data && activeTab === 'dashboard' && <FarmConfigPanel config={config} onChange={setConfig} />}
 
-        {data && !showAnalytics && (
+        {data && activeTab === 'dashboard' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
             {/* Left: Telemetry */}
@@ -167,6 +238,15 @@ function App() {
                     accentBg="bg-amber-500/10"
                     accentBorder="border-amber-500/20"
                   />
+                  <StatCard
+                    icon={<Calendar className="w-4 h-4" strokeWidth={2} />}
+                    label="Last Irrigated"
+                    value={getDaysSinceLastIrrigation(data.last_irrigation_date)}
+                    unit=""
+                    accentColor="text-pink-400"
+                    accentBg="bg-pink-500/10"
+                    accentBorder="border-pink-500/20"
+                  />
 
                   {data.latitude !== undefined && data.longitude !== undefined && (
                     <div className="glass-panel px-3.5 py-2.5 flex items-center gap-2 border border-slate-700/40">
@@ -195,6 +275,9 @@ function App() {
                   <p className="text-sm text-slate-300">{data.plant_growth_stage}</p>
                 </div>
               )}
+
+              {/* Harvest Calendar */}
+              <HarvestCalendar data={data} />
             </div>
 
             {/* Right: Agent Reports */}
@@ -219,13 +302,52 @@ function App() {
                 confidence={data.reasoning_confidence}
               />
               <AgentReportCard
-                title="Financial Director"
-                icon={<BadgeDollarSign className="w-4 h-4" />}
-                content={data.financial_analysis}
-                loadingMessage="Synthesizing agent consensus and calculating ROI…"
+                title="Agronomist"
+                icon={<Sprout className="w-4 h-4" />}
+                content={data.agronomist_analysis}
+                loadingMessage="Analyzing seed genetic profile and emergence rate…"
+                accentColor="text-emerald-400"
+                accentBg="bg-emerald-500/10"
+                accentBorder="border-emerald-500/20"
+                confidence={data.agronomist_confidence}
+              />
+              <AgentReportCard
+                title="Pedologist"
+                icon={<Layers className="w-4 h-4" />}
+                content={data.pedologist_analysis}
+                loadingMessage="Modeling soil water potential and wilting progress…"
                 accentColor="text-amber-400"
                 accentBg="bg-amber-500/10"
                 accentBorder="border-amber-500/20"
+                confidence={data.pedologist_confidence}
+              />
+              <AgentReportCard
+                title="Economist"
+                icon={<BadgeDollarSign className="w-4 h-4" />}
+                content={data.economist_analysis}
+                loadingMessage="Analyzing operational cost models and estimating ROI…"
+                accentColor="text-purple-400"
+                accentBg="bg-purple-500/10"
+                accentBorder="border-purple-500/20"
+                confidence={data.economist_confidence}
+              />
+              <AgentReportCard
+                title="Harvest Advisor"
+                icon={<Calendar className="w-4 h-4" />}
+                content={data.harvest_analysis}
+                loadingMessage="Calculating maturity indicators, GDD, and disease risk factors…"
+                accentColor="text-pink-400"
+                accentBg="bg-pink-500/10"
+                accentBorder="border-pink-500/20"
+              />
+              <AgentReportCard
+                title="Orchestrator"
+                icon={<Cpu className="w-4 h-4" />}
+                content={data.orchestrator_analysis || data.financial_analysis}
+                loadingMessage="Resolving agent conflicts and computing consensus vote…"
+                accentColor="text-blue-400"
+                accentBg="bg-blue-500/10"
+                accentBorder="border-blue-500/20"
               />
 
               {data.decision && (

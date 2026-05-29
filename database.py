@@ -41,14 +41,35 @@ class DecisionLog(SQLModel, table=True):
     # Full agent analyses (decision audit trail)
     meteorologist_analysis: str = Field(default="")
     botanist_analysis: str = Field(default="")
+    agronomist_analysis: str = Field(default="")
+    pedologist_analysis: str = Field(default="")
+    economist_analysis: str = Field(default="")
+    harvest_analysis: str = Field(default="")
+    orchestrator_analysis: str = Field(default="")
+    
+    # Legacy fields
     financial_analysis: str = Field(default="")
     reasoning_confidence: float = Field(default=0.0)
 
     # Decision outputs
     decision: str
     water_volume_liters: float
-    financial_cost_dzd: float
-    crop_value_at_risk_dzd: float = Field(default=0.0)
+    financial_cost_dzd: float = Field(default=0.0)  # Legacy
+    crop_value_at_risk_dzd: float = Field(default=0.0)  # Legacy
+
+    # Cost model outputs (USD)
+    water_cost_usd: float = Field(default=0.0)
+    electricity_cost_usd: float = Field(default=0.0)
+    fuel_cost_usd: float = Field(default=0.0)
+    labor_cost_usd: float = Field(default=0.0)
+    total_operational_cost_usd: float = Field(default=0.0)
+    roi_score: float = Field(default=0.0)
+    crop_value_at_risk_usd: float = Field(default=0.0)
+
+    # Harvest and operational tracking
+    fertilizer_recommendation: str = Field(default="")
+    last_irrigation_date: Optional[str] = Field(default=None)
+    agent_votes: str = Field(default="{}")
 
     # Human approval
     human_approved: bool
@@ -101,6 +122,34 @@ def get_all_decision_logs() -> list[DecisionLog]:
         return list(logs)
 
 
+def get_days_since_last_irrigation() -> float:
+    """Query DB for latest approved irrigation and calculate days elapsed."""
+    latest_date = None
+    with Session(engine) as session:
+        result = session.exec(
+            select(DecisionLog)
+            .where(DecisionLog.decision.in_(["irrigate", "micro_irrigate"]))
+            .where(DecisionLog.human_approved == True)
+            .order_by(DecisionLog.timestamp.desc())
+            .limit(1)
+        ).first()
+        if result and result.last_irrigation_date:
+            try:
+                latest_date = datetime.fromisoformat(result.last_irrigation_date)
+            except Exception:
+                latest_date = result.timestamp
+        elif result:
+            latest_date = result.timestamp
+            
+    if latest_date:
+        # Normalize to UTC
+        if latest_date.tzinfo is None:
+            latest_date = latest_date.replace(tzinfo=timezone.utc)
+        delta = datetime.now(timezone.utc) - latest_date
+        return round(delta.total_seconds() / 86400.0, 1)
+    return 14.0  # Default to 14 days if never irrigated
+
+
 def update_outcome_rating(log_id: int, rating: int) -> bool:
     """
     Update the outcome rating for a decision log entry.
@@ -134,18 +183,37 @@ def get_aggregate_stats() -> dict:
                 "irrigate_count": 0,
                 "wait_count": 0,
                 "total_water_liters": 0.0,
-                "total_cost_dzd": 0.0,
+                "total_cost_usd": 0.0,
+                "total_electricity_cost_usd": 0.0,
+                "total_labor_cost_usd": 0.0,
+                "total_fuel_cost_usd": 0.0,
+                "total_water_cost_usd": 0.0,
+                "avg_roi": 0.0,
                 "approval_rate": 0.0,
                 "avg_soil_moisture": 0.0,
             }
 
-        irrigate = [l for l in logs if l.decision == "irrigate"]
+        irrigate = [l for l in logs if l.decision in ("irrigate", "micro_irrigate")]
+        total_costs_usd = sum(l.total_operational_cost_usd for l in logs)
+        total_elec_usd = sum(l.electricity_cost_usd for l in logs)
+        total_labor_usd = sum(l.labor_cost_usd for l in logs)
+        total_fuel_usd = sum(l.fuel_cost_usd for l in logs)
+        total_water_usd = sum(l.water_cost_usd for l in logs)
+        
+        roi_entries = [l.roi_score for l in logs if l.roi_score > 0]
+        avg_roi = sum(roi_entries) / len(roi_entries) if roi_entries else 0.0
+
         return {
             "total_decisions": len(logs),
             "irrigate_count": len(irrigate),
             "wait_count": len(logs) - len(irrigate),
             "total_water_liters": sum(l.water_volume_liters for l in logs),
-            "total_cost_dzd": sum(l.financial_cost_dzd for l in logs),
+            "total_cost_usd": total_costs_usd,
+            "total_electricity_cost_usd": total_elec_usd,
+            "total_labor_cost_usd": total_labor_usd,
+            "total_fuel_cost_usd": total_fuel_usd,
+            "total_water_cost_usd": total_water_usd,
+            "avg_roi": avg_roi,
             "approval_rate": (
                 sum(1 for l in irrigate if l.human_approved) / len(irrigate)
                 if irrigate else 0.0

@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import {
-  LineChart, Line, AreaChart, Area,
+  AreaChart, Area,
   PieChart, Pie, Cell, Legend,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  BarChart, Bar,
 } from 'recharts';
 import {
   Database, Droplets, DollarSign, ThumbsUp, ThumbsDown,
   TrendingUp, RefreshCw, BookOpen, ChevronDown, ChevronUp,
-  CloudRain, Leaf, BadgeDollarSign, Thermometer,
+  CloudRain, Leaf, Thermometer,
 } from 'lucide-react';
 import type { HistoryLog, AggregateStats } from '../types';
 import { fetchHistory, fetchStats } from '../hooks/useAnalysis';
@@ -134,11 +135,19 @@ export function AnalyticsDashboard({ onFeedback }: AnalyticsDashboardProps) {
       {!loading && stats && (
         <>
           {/* KPI row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <KpiCard label="Total Runs"    value={`${stats.total_decisions}`}                          color="text-slate-200"   bg="bg-slate-700/30"      border="border-slate-700/50" />
-            <KpiCard label="Total Water"   value={`${(stats.total_water_liters / 1000).toFixed(1)}k L`} color="text-blue-300"    bg="bg-blue-500/[0.06]"   border="border-blue-500/15" />
-            <KpiCard label="Total Cost"    value={`${stats.total_cost_dzd.toFixed(0)} DZD`}           color="text-amber-300"   bg="bg-amber-500/[0.06]"  border="border-amber-500/15" />
-            <KpiCard label="Avg Moisture"  value={`${stats.avg_soil_moisture.toFixed(1)}%`}            color="text-emerald-300" bg="bg-emerald-500/[0.06]" border="border-emerald-500/15" />
+          <div className="space-y-3 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <KpiCard label="Total Runs"    value={`${stats.total_decisions}`}                          color="text-slate-200"   bg="bg-slate-700/30"      border="border-slate-700/50" />
+              <KpiCard label="Total Water"   value={`${(stats.total_water_liters / 1000).toFixed(1)}k L`} color="text-blue-300"    bg="bg-blue-500/[0.06]"   border="border-blue-500/15" />
+              <KpiCard label="Total Cost"    value={`${stats.total_cost_usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`} color="text-amber-300" bg="bg-amber-500/[0.06]" border="border-amber-500/15" />
+              <KpiCard label="Avg ROI"       value={`${stats.avg_roi ? stats.avg_roi.toFixed(2) + 'x' : '—'}`} color="text-emerald-300" bg="bg-emerald-500/[0.06]" border="border-emerald-500/15" />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <KpiCard label="Electricity Cost" value={`${stats.total_electricity_cost_usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`} color="text-amber-400" bg="bg-amber-500/5" border="border-amber-500/10" />
+              <KpiCard label="Fuel Cost"        value={`${stats.total_fuel_cost_usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`} color="text-red-400" bg="bg-red-500/5" border="border-red-500/10" />
+              <KpiCard label="Labor Cost"       value={`${stats.total_labor_cost_usd.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`} color="text-purple-400" bg="bg-purple-500/5" border="border-purple-500/10" />
+              <KpiCard label="Avg Moisture"     value={`${stats.avg_soil_moisture.toFixed(1)}%`}            color="text-blue-400" bg="bg-blue-500/5" border="border-blue-500/10" />
+            </div>
           </div>
 
           {/* Charts */}
@@ -190,21 +199,46 @@ export function AnalyticsDashboard({ onFeedback }: AnalyticsDashboardProps) {
           </div>
 
           {chartData.length > 0 && (
-            <div className="bg-slate-900/60 border border-white/[0.05] rounded-xl p-4 mb-6">
-              <p className="section-label flex items-center gap-1.5 mb-4">
-                <DollarSign className="w-3 h-3" /> Cost Over Time (DZD)
-              </p>
-              <ResponsiveContainer width="100%" height={110}>
-                <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_STYLE.gridStroke} vertical={false} />
-                  <XAxis dataKey="timestamp" tickFormatter={formatDate} tick={CHART_STYLE.axisStyle} stroke="transparent" />
-                  <YAxis tick={CHART_STYLE.axisStyle} stroke="transparent" />
-                  <Tooltip contentStyle={CHART_STYLE.tooltipStyle} labelFormatter={t => formatDate(t)} />
-                  <Line type="monotone" dataKey="financial_cost_dzd" stroke="#f59e0b" strokeWidth={2} name="Cost (DZD)"
-                    dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }}
-                    activeDot={{ r: 5, fill: '#f59e0b', strokeWidth: 0 }} />
-                </LineChart>
-              </ResponsiveContainer>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+              <div className="bg-slate-900/60 border border-white/[0.05] rounded-xl p-4">
+                <p className="section-label flex items-center gap-1.5 mb-4">
+                  <TrendingUp className="w-3 h-3" /> Total Cost Trend (USD)
+                </p>
+                <ResponsiveContainer width="100%" height={150}>
+                  <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#f59e0b" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}    />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_STYLE.gridStroke} vertical={false} />
+                    <XAxis dataKey="timestamp" tickFormatter={formatDate} tick={CHART_STYLE.axisStyle} stroke="transparent" />
+                    <YAxis tick={CHART_STYLE.axisStyle} stroke="transparent" />
+                    <Tooltip contentStyle={CHART_STYLE.tooltipStyle} labelFormatter={t => formatDate(t)} />
+                    <Area type="monotone" dataKey="total_operational_cost_usd" stroke="#f59e0b" fill="url(#costGrad)" strokeWidth={2} name="Total Cost (USD)" dot={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="bg-slate-900/60 border border-white/[0.05] rounded-xl p-4">
+                <p className="section-label flex items-center gap-1.5 mb-4">
+                  <DollarSign className="w-3 h-3" /> Cost Breakdown (USD)
+                </p>
+                <ResponsiveContainer width="100%" height={150}>
+                  <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_STYLE.gridStroke} vertical={false} />
+                    <XAxis dataKey="timestamp" tickFormatter={formatDate} tick={CHART_STYLE.axisStyle} stroke="transparent" />
+                    <YAxis tick={CHART_STYLE.axisStyle} stroke="transparent" />
+                    <Tooltip contentStyle={CHART_STYLE.tooltipStyle} labelFormatter={t => formatDate(t)} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                    <Bar dataKey="water_cost_usd" stackId="a" fill="#3b82f6" name="Water" />
+                    <Bar dataKey="electricity_cost_usd" stackId="a" fill="#f59e0b" name="Elec" />
+                    <Bar dataKey="fuel_cost_usd" stackId="a" fill="#ef4444" name="Fuel" />
+                    <Bar dataKey="labor_cost_usd" stackId="a" fill="#a855f7" name="Labor" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           )}
         </>
@@ -248,8 +282,13 @@ export function AnalyticsDashboard({ onFeedback }: AnalyticsDashboardProps) {
                     <Thermometer className="w-3 h-3" />{log.temperature}°C
                   </span>
                   <span className="flex items-center gap-1 text-xs text-amber-400 font-[var(--font-mono)]">
-                    <DollarSign className="w-3 h-3" />{log.financial_cost_dzd?.toFixed(0)} DZD
+                    <DollarSign className="w-3 h-3" />${(log.total_operational_cost_usd ?? 0).toFixed(2)}
                   </span>
+                  {log.last_irrigation_date && (
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      Irrigated: {new Date(log.last_irrigation_date).toLocaleDateString()}
+                    </span>
+                  )}
 
                   <span className="text-[11px] text-slate-600 ml-auto font-[var(--font-mono)]">
                     {formatDate(log.timestamp)} {formatTime(log.timestamp)}
@@ -275,7 +314,7 @@ export function AnalyticsDashboard({ onFeedback }: AnalyticsDashboardProps) {
                       <div className="bg-emerald-500/[0.04] border border-emerald-500/12 rounded-lg p-3">
                         <p className="flex items-center gap-1.5 section-label text-emerald-400/60 mb-1.5">
                           <Leaf className="w-3 h-3" /> Botanist
-                          {log.reasoning_confidence > 0 && (
+                          {log.reasoning_confidence !== undefined && log.reasoning_confidence > 0 && (
                             <span className="opacity-60 normal-case font-normal tracking-normal ml-1">
                               · {Math.round(log.reasoning_confidence * 100)}% confidence
                             </span>
@@ -284,12 +323,44 @@ export function AnalyticsDashboard({ onFeedback }: AnalyticsDashboardProps) {
                         <p className="text-xs text-slate-400 leading-relaxed">{log.botanist_analysis}</p>
                       </div>
                     )}
-                    {log.financial_analysis && (
+                    {log.agronomist_analysis && (
+                      <div className="bg-emerald-500/[0.04] border border-emerald-500/12 rounded-lg p-3">
+                        <p className="flex items-center gap-1.5 section-label text-emerald-400/60 mb-1.5">
+                          🧬 Agronomist
+                        </p>
+                        <p className="text-xs text-slate-400 leading-relaxed">{log.agronomist_analysis}</p>
+                      </div>
+                    )}
+                    {log.pedologist_analysis && (
                       <div className="bg-amber-500/[0.04] border border-amber-500/12 rounded-lg p-3">
                         <p className="flex items-center gap-1.5 section-label text-amber-400/60 mb-1.5">
-                          <BadgeDollarSign className="w-3 h-3" /> Financial Director
+                          🪨 Pedologist
                         </p>
-                        <p className="text-xs text-slate-400 leading-relaxed">{log.financial_analysis}</p>
+                        <p className="text-xs text-slate-400 leading-relaxed">{log.pedologist_analysis}</p>
+                      </div>
+                    )}
+                    {log.economist_analysis && (
+                      <div className="bg-purple-500/[0.04] border border-purple-500/12 rounded-lg p-3">
+                        <p className="flex items-center gap-1.5 section-label text-purple-400/60 mb-1.5">
+                          📈 Economist
+                        </p>
+                        <p className="text-xs text-slate-400 leading-relaxed">{log.economist_analysis}</p>
+                      </div>
+                    )}
+                    {log.harvest_analysis && (
+                      <div className="bg-pink-500/[0.04] border border-pink-500/12 rounded-lg p-3">
+                        <p className="flex items-center gap-1.5 section-label text-pink-400/60 mb-1.5">
+                          🌾 Harvest Advisor
+                        </p>
+                        <p className="text-xs text-slate-400 leading-relaxed">{log.harvest_analysis}</p>
+                      </div>
+                    )}
+                    {(log.orchestrator_analysis || log.financial_analysis) && (
+                      <div className="bg-pink-500/[0.04] border border-pink-500/12 rounded-lg p-3">
+                        <p className="flex items-center gap-1.5 section-label text-pink-400/60 mb-1.5">
+                          🎯 Orchestrator
+                        </p>
+                        <p className="text-xs text-slate-400 leading-relaxed">{log.orchestrator_analysis || log.financial_analysis}</p>
                       </div>
                     )}
 

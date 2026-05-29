@@ -1,4 +1,4 @@
-import { CheckCircle, Loader2, CloudRain, Leaf, BadgeDollarSign, Database, AlertTriangle, Zap } from 'lucide-react';
+import { CheckCircle, Loader2, CloudRain, Leaf, BadgeDollarSign, Database, AlertTriangle, Zap, Layers, GitMerge } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AgentStep } from '../types';
 
@@ -22,7 +22,7 @@ const STEPS: StepDef[] = [
   {
     id: 'sensors',
     label: 'Sensors',
-    sub: 'Weather & soil',
+    sub: 'Telemetry & Weather',
     icon: <Database className="w-4 h-4" />,
     color: 'text-amber-400',
     activeBg: 'bg-amber-400/15 border-amber-400/50',
@@ -30,9 +30,9 @@ const STEPS: StepDef[] = [
     stripeFrom: 'from-amber-400',
   },
   {
-    id: 'meteorologist',
-    label: 'AI Agents',
-    sub: 'Running parallel',
+    id: 'parallel_agents',
+    label: 'Parallel Layers',
+    sub: 'Genetics & Bio & Meteo',
     icon: <CloudRain className="w-4 h-4" />,
     color: 'text-blue-400',
     activeBg: 'bg-blue-400/15 border-blue-400/50',
@@ -40,14 +40,34 @@ const STEPS: StepDef[] = [
     stripeFrom: 'from-blue-400',
   },
   {
-    id: 'financial',
-    label: 'Financials',
-    sub: 'Synthesizing',
+    id: 'pedologist',
+    label: 'Soil Physics',
+    sub: 'Depletion & Wilting',
+    icon: <Layers className="w-4 h-4" />,
+    color: 'text-orange-400',
+    activeBg: 'bg-orange-400/15 border-orange-400/50',
+    dotColor: 'bg-orange-400',
+    stripeFrom: 'from-orange-400',
+  },
+  {
+    id: 'economics_harvest',
+    label: 'Valuation',
+    sub: 'ROI & Phenology',
     icon: <BadgeDollarSign className="w-4 h-4" />,
     color: 'text-purple-400',
     activeBg: 'bg-purple-400/15 border-purple-400/50',
     dotColor: 'bg-purple-400',
     stripeFrom: 'from-purple-400',
+  },
+  {
+    id: 'orchestrator',
+    label: 'Consensus',
+    sub: 'Orchestrating votes',
+    icon: <GitMerge className="w-4 h-4" />,
+    color: 'text-pink-400',
+    activeBg: 'bg-pink-400/15 border-pink-400/50',
+    dotColor: 'bg-pink-400',
+    stripeFrom: 'from-pink-400',
   },
   {
     id: 'awaiting',
@@ -71,7 +91,7 @@ const STEPS: StepDef[] = [
   },
 ];
 
-const STEP_ORDER: AgentStep[] = ['idle', 'sensors', 'meteorologist', 'financial', 'awaiting', 'done'];
+const STEP_ORDER: AgentStep[] = ['idle', 'sensors', 'parallel_agents', 'pedologist', 'economics_harvest', 'orchestrator', 'awaiting', 'done'];
 
 function getStatus(id: string, cur: AgentStep): 'done' | 'active' | 'pending' {
   if (cur === 'error') return 'pending';

@@ -14,8 +14,9 @@ import json
 import logging
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Annotated
+from typing import Annotated, Optional
 
+from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -103,10 +104,26 @@ class ConfigPayload(BaseModel):
     longitude: float = settings.default_longitude
     water_salinity: Annotated[float, Field(ge=0, le=20)] = 1.2
     plant_growth_stage: str = "Vegetative Stage (High Water Demand)"
+    
+    # New Config Fields
+    seed_profile: str = "Standard"
+    upov_id: Optional[str] = None
+    germination_rate_pct: Annotated[float, Field(ge=0, le=100)] = 85.0
+    planting_date: str = "2026-04-01"
+    soil_texture: str = "Loamy"
+    pump_type: str = "Electric"
+    pump_kw: Annotated[float, Field(ge=0, le=1000)] = 5.5
+    fuel_use_lph: Annotated[float, Field(ge=0, le=1000)] = 0.0
+    labor_workers: Annotated[int, Field(ge=0, le=100)] = 1
+    labor_hours: Annotated[float, Field(ge=0, le=1000)] = 2.0
+    labor_wage_usd: Annotated[float, Field(ge=0, le=1000)] = 15.0
+    market_price_usd_per_kg: Annotated[float, Field(ge=0, le=1000)] = 0.0
 
-    @field_validator("crop_type", "plant_growth_stage")
+    @field_validator("crop_type", "plant_growth_stage", "seed_profile", "soil_texture", "pump_type", "planting_date")
     @classmethod
     def strip_and_validate(cls, v: str) -> str:
+        if v is None:
+            return ""
         v = v.strip()
         if not v:
             raise ValueError("Field cannot be empty")
@@ -169,6 +186,18 @@ async def run_analysis(request: Request, payload: ConfigPayload):
         "longitude": payload.longitude,
         "water_salinity": payload.water_salinity,
         "plant_growth_stage": payload.plant_growth_stage,
+        "seed_profile": payload.seed_profile,
+        "upov_id": payload.upov_id,
+        "germination_rate_pct": payload.germination_rate_pct,
+        "planting_date": payload.planting_date,
+        "soil_texture": payload.soil_texture,
+        "pump_type": payload.pump_type,
+        "pump_kw": payload.pump_kw,
+        "fuel_use_lph": payload.fuel_use_lph,
+        "labor_workers": payload.labor_workers,
+        "labor_hours": payload.labor_hours,
+        "labor_wage_usd": payload.labor_wage_usd,
+        "market_price_usd_per_kg": payload.market_price_usd_per_kg,
     }
 
     log.info(
@@ -189,7 +218,11 @@ async def run_analysis(request: Request, payload: ConfigPayload):
             fallback = {**initial_state, "thread_id": thread_id}
             fallback["meteorologist_analysis"] = "⚠️ API error — please wait 60 seconds and retry."
             fallback["botanist_analysis"] = "⚠️ API error — please wait 60 seconds and retry."
-            fallback["financial_analysis"] = f"Error: {str(e)}"
+            fallback["agronomist_analysis"] = "⚠️ API error — please wait 60 seconds and retry."
+            fallback["pedologist_analysis"] = "⚠️ API error — please wait 60 seconds and retry."
+            fallback["economist_analysis"] = "⚠️ API error — please wait 60 seconds and retry."
+            fallback["harvest_analysis"] = "⚠️ API error — please wait 60 seconds and retry."
+            fallback["orchestrator_analysis"] = f"Error: {str(e)}"
             fallback["decision"] = "error"
             yield f"data: {json.dumps(fallback)}\n\n"
 
@@ -234,14 +267,33 @@ async def execute_hardware(request: ApprovalRequest):
         water_salinity=final_result.get("water_salinity", 0.0),
         plant_growth_stage=final_result.get("plant_growth_stage", ""),
         weather_forecast=final_result.get("weather_forecast", ""),
+        
+        # New Agent Analyses
         meteorologist_analysis=final_result.get("meteorologist_analysis", ""),
         botanist_analysis=final_result.get("botanist_analysis", ""),
-        financial_analysis=final_result.get("financial_analysis", ""),
+        agronomist_analysis=final_result.get("agronomist_analysis", ""),
+        pedologist_analysis=final_result.get("pedologist_analysis", ""),
+        economist_analysis=final_result.get("economist_analysis", ""),
+        harvest_analysis=final_result.get("harvest_analysis", ""),
+        orchestrator_analysis=final_result.get("orchestrator_analysis", ""),
+        
         reasoning_confidence=final_result.get("reasoning_confidence", 0.0),
         decision=final_result.get("decision", ""),
         water_volume_liters=final_result.get("water_volume_liters", 0.0),
-        financial_cost_dzd=final_result.get("financial_cost_dzd", 0.0),
-        crop_value_at_risk_dzd=final_result.get("crop_value_at_risk_dzd", 0.0),
+        
+        # USD Cost Fields
+        water_cost_usd=final_result.get("water_cost_usd", 0.0),
+        electricity_cost_usd=final_result.get("electricity_cost_usd", 0.0),
+        fuel_cost_usd=final_result.get("fuel_cost_usd", 0.0),
+        labor_cost_usd=final_result.get("labor_cost_usd", 0.0),
+        total_operational_cost_usd=final_result.get("total_operational_cost_usd", 0.0),
+        roi_score=final_result.get("roi_score", 0.0),
+        crop_value_at_risk_usd=final_result.get("crop_value_at_risk_usd", 0.0),
+        
+        fertilizer_recommendation=final_result.get("fertilizer_recommendation", ""),
+        agent_votes=json.dumps(final_result.get("agent_votes", {})),
+        last_irrigation_date=datetime.now(timezone.utc).isoformat() if request.is_approved and final_result.get("decision") in ("irrigate", "micro_irrigate") else None,
+        
         human_approved=request.is_approved,
     )
     saved = await loop.run_in_executor(None, save_decision_log, log_entry)
@@ -253,14 +305,14 @@ async def execute_hardware(request: ApprovalRequest):
     temp = final_result.get("temperature", 0)
     salinity = final_result.get("water_salinity", 0)
 
-    if decision == "irrigate" and request.is_approved:
+    if decision in ("irrigate", "micro_irrigate") and request.is_approved:
         mem_text = (
             f"IRRIGATED {final_result.get('water_volume_liters', 0):,.0f}L for {crop}. "
             f"Conditions: moisture={moisture:.1f}%, temp={temp}°C, salinity={salinity} dS/m. "
             f"Botanist analysis: {final_result.get('botanist_analysis', '')[:200]}"
         )
         add_memory(mem_text, {"thread_id": request.thread_id, "action": "irrigate", "crop_type": crop})
-    elif decision == "irrigate" and not request.is_approved:
+    elif decision in ("irrigate", "micro_irrigate") and not request.is_approved:
         mem_text = (
             f"IRRIGATION REJECTED by operator for {crop}. "
             f"Conditions: moisture={moisture:.1f}%, temp={temp}°C, salinity={salinity} dS/m."
@@ -288,6 +340,141 @@ async def execute_hardware(request: ApprovalRequest):
         "hardware_command": "EXECUTED" if request.is_approved else "REJECTED",
         "message": final_result.get("actuator_message", "No message."),
     }
+
+
+@app.get("/api/crop-planner", tags=["Analysis"])
+async def get_crop_planner(lat: float, lon: float, soil: str, month: int):
+    """
+    Rank and return crop recommendations based on location, soil, and month.
+    """
+    # 1. Koppen Zone calculation
+    if lat > 35.0:
+        koppen = "Csa"
+    elif 32.0 <= lat <= 35.0:
+        koppen = "BSk"
+    elif 28.0 <= lat < 32.0:
+        koppen = "BSh"
+    else:
+        koppen = "BWh"
+
+    # 2. Load crop database
+    import os
+    db_path = os.path.join(os.path.dirname(__file__), "crop_db.json")
+    try:
+        with open(db_path, "r", encoding="utf-8") as f:
+            crop_db = json.load(f)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load crop database: {e}")
+
+    # 3. Planting windows
+    planting_windows = {
+        "TRZAW": [10, 11, 12, 1], # Winter Wheat: Oct - Jan
+        "HORVV": [10, 11, 12, 1], # Barley: Oct - Jan
+        "ZEAMX": [3, 4, 5, 6],    # Maize/Corn: Mar - Jun
+        "LYPES": [2, 3, 4, 5],    # Tomato: Feb - May
+        "SOLTU": [1, 2, 3, 9, 10],# Potato: Jan-Mar, Sept-Oct
+        "HEFAN": [3, 4, 5, 6],    # Sunflower: Mar - Jun
+        "ALLCE": [10, 11, 12, 1, 2],# Onion: Oct - Feb
+        "CITLA": [3, 4, 5],       # Watermelon: Mar - May
+        "CPSAN": [2, 3, 4, 5],    # Bell Pepper: Feb - May
+        "GOSHI": [3, 4, 5],       # Cotton: Mar - May
+        "CICAR": [2, 3, 4],       # Chickpea: Feb - Apr
+        "MEDSA": [3, 4, 5, 9, 10] # Alfalfa: Mar-May, Sept-Oct
+    }
+
+    # 4. Water needs
+    water_needs = {
+        "TRZAW": "Medium", "HORVV": "Medium", "ZEAMX": "High", "LYPES": "High",
+        "SOLTU": "Medium", "HEFAN": "Medium", "ALLCE": "Low", "CITLA": "Low",
+        "CPSAN": "Medium", "GOSHI": "High", "CICAR": "Low", "MEDSA": "High"
+    }
+
+    recommendations = []
+    for eppo, crop_data in crop_db.items():
+        # Climate suitability check
+        botanical = crop_data.get("botanical", {})
+        koppen_zones = botanical.get("koppen_zones", [])
+        climate_match = koppen in koppen_zones
+
+        # Soil suitability check
+        hydrology = crop_data.get("hydrology", {})
+        texture_range = hydrology.get("soil_texture_range", [])
+        
+        soil_match = False
+        selected_soil_lower = soil.lower()
+        for tr in texture_range:
+            tr_lower = tr.lower()
+            if selected_soil_lower in tr_lower or ("loam" in selected_soil_lower and "loam" in tr_lower):
+                soil_match = True
+                break
+
+        # Month match check
+        window = planting_windows.get(eppo, [])
+        month_match = month in window
+
+        # Calculate suitability score
+        score = 100.0
+        if not climate_match:
+            score -= 30.0
+        if not soil_match:
+            score -= 30.0
+        if not month_match:
+            score -= 20.0
+        score = max(10.0, score)
+
+        # Select best cultivar profile
+        if soil in ("Sandy", "Clay") or koppen in ("BSk", "BSh", "BWh"):
+            best_cultivar = "Drought-Resistant"
+        elif soil == "Loamy" and koppen in ("Csa", "Csb"):
+            best_cultivar = "High-Yield"
+        else:
+            best_cultivar = "Standard"
+
+        profiles = crop_data.get("cultivar_profiles", {})
+        cultivar_profiles_data = profiles.get(best_cultivar, profiles.get("Standard", {}))
+        
+        # Financial projection
+        yield_kg_ha = cultivar_profiles_data.get("yield_kg_ha", 3000.0)
+        dtm = cultivar_profiles_data.get("dtm", 100)
+        
+        economics = crop_data.get("economics", {})
+        price = economics.get("market_price_usd_per_kg", 0.20)
+        initial_invest = economics.get("initial_investment_usd_per_ha", 500.0)
+        
+        expected_revenue = yield_kg_ha * price
+        
+        water_need = water_needs.get(eppo, "Medium")
+        # Estimate water + pumping costs per ha
+        est_water_cost = {"Low": 150.0, "Medium": 300.0, "High": 500.0}[water_need]
+        total_costs = initial_invest + est_water_cost
+        net_profit = expected_revenue - total_costs
+
+        bbch_matrix = crop_data.get("bbch_matrix", {})
+        # Find highest sensitivity BBCH stage
+        critical_stage = "None"
+        for code, info in bbch_matrix.items():
+            if info.get("sensitivity") == "Critical":
+                critical_stage = f"BBCH {code} ({info.get('stage')})"
+                break
+        if critical_stage == "None" and bbch_matrix:
+            critical_stage = f"BBCH {list(bbch_matrix.keys())[0]}"
+
+        recommendations.append({
+            "eppo": eppo,
+            "crop": crop_data.get("common_name", eppo),
+            "best_cultivar": best_cultivar,
+            "time_to_harvest": dtm,
+            "initial_investment": initial_invest,
+            "expected_revenue": expected_revenue,
+            "net_profit": net_profit,
+            "water_need": water_need,
+            "suitability_score": score,
+            "bbch_sensitivity": critical_stage
+        })
+
+    # Sort recommendations by net_profit descending
+    recommendations.sort(key=lambda x: x["net_profit"], reverse=True)
+    return recommendations
 
 
 @app.get("/api/history", tags=["Analytics"])

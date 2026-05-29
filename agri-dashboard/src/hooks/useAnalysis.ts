@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
-import type { AnalysisData, AggregateStats, FarmConfig, HistoryLog, AgentStep } from '../types';
+import type { AnalysisData, AggregateStats, FarmConfig, HistoryLog, AgentStep, CropPlannerEntry } from '../types';
 import { API_BASE } from '../constants';
 
 export function useAnalysis() {
@@ -12,13 +12,13 @@ export function useAnalysis() {
   /** Derive AgentStep from streaming state snapshot */
   const deriveStep = (parsed: AnalysisData): AgentStep => {
     if (parsed.decision === 'error') return 'error';
-    if (parsed.decision === 'anomaly') return 'awaiting'; // bypass agent steps — direct to HITL
+    if (parsed.decision === 'anomaly') return 'awaiting'; // direct bypass
+    if (parsed.decision && parsed.human_approved !== null && parsed.human_approved !== undefined) return 'done';
     if (parsed.decision && parsed.human_approved === null) return 'awaiting';
-    if (parsed.financial_analysis) return 'awaiting';
-    if (parsed.botanist_analysis || parsed.meteorologist_analysis) {
-      // Both or either running in parallel
-      return 'meteorologist';
-    }
+    if (parsed.orchestrator_analysis) return 'awaiting';
+    if (parsed.economist_analysis || parsed.harvest_analysis) return 'orchestrator';
+    if (parsed.pedologist_analysis) return 'economics_harvest';
+    if (parsed.botanist_analysis || parsed.meteorologist_analysis || parsed.agronomist_analysis) return 'pedologist';
     if (parsed.soil_moisture !== undefined) return 'sensors';
     return 'idle';
   };
@@ -41,6 +41,18 @@ export function useAnalysis() {
           longitude: config.longitude,
           water_salinity: config.waterSalinity,
           plant_growth_stage: config.plantGrowthStage,
+          seed_profile: config.seedProfile,
+          upov_id: config.upovId,
+          germination_rate_pct: config.germinationRatePct,
+          planting_date: config.plantingDate,
+          soil_texture: config.soilTexture,
+          pump_type: config.pumpType,
+          pump_kw: config.pumpKw,
+          fuel_use_lph: config.fuelUseLph,
+          labor_workers: config.laborWorkers,
+          labor_hours: config.laborHours,
+          labor_wage_usd: config.laborWageUsd,
+          market_price_usd_per_kg: config.marketPriceUsdPerKg,
         }),
       });
 
@@ -142,5 +154,11 @@ export async function fetchHistory(): Promise<HistoryLog[]> {
 export async function fetchStats(): Promise<AggregateStats> {
   const res = await fetch(`${API_BASE}/api/stats`);
   if (!res.ok) throw new Error('Failed to fetch stats');
+  return res.json();
+}
+
+export async function fetchCropPlanner(lat: number, lon: number, soil: string, month: number): Promise<CropPlannerEntry[]> {
+  const res = await fetch(`${API_BASE}/api/crop-planner?lat=${lat}&lon=${lon}&soil=${soil}&month=${month}`);
+  if (!res.ok) throw new Error('Failed to fetch crop recommendations');
   return res.json();
 }

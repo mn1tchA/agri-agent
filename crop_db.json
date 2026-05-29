@@ -1,0 +1,602 @@
+{
+  "TRZAW": {
+    "eppo_code": "TRZAW",
+    "common_name": "Wheat (Winter)",
+    "botanical": {
+      "family": "Poaceae",
+      "genus": "Triticum",
+      "species": "Triticum aestivum L.",
+      "koppen_zones": ["BSk", "BSh", "Csa", "Cfb", "Dfb"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 210, "gdd_target": 1700, "gdd_base_temp_c": 0,  "germination_rate_pct": 88, "seed_halflife_years": 5, "drought_tolerance": 0.45, "yield_kg_ha": 3500 },
+      "Drought-Resistant": { "dtm": 190, "gdd_target": 1550, "gdd_base_temp_c": 0,  "germination_rate_pct": 85, "seed_halflife_years": 5, "drought_tolerance": 0.80, "yield_kg_ha": 2900 },
+      "High-Yield":        { "dtm": 225, "gdd_target": 1850, "gdd_base_temp_c": 0,  "germination_rate_pct": 92, "seed_halflife_years": 4, "drought_tolerance": 0.25, "yield_kg_ha": 6000 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Germination",       "sensitivity": "High",     "days_range": [0, 10] },
+      "10-29": { "stage": "Tillering",         "sensitivity": "Medium",   "days_range": [10, 60] },
+      "30-49": { "stage": "Stem Elongation",   "sensitivity": "Medium",   "days_range": [60, 120] },
+      "51-69": { "stage": "Heading/Flowering", "sensitivity": "Critical", "days_range": [120, 150] },
+      "71-89": { "stage": "Grain Fill",        "sensitivity": "High",     "days_range": [150, 195] },
+      "91-99": { "stage": "Maturation",        "sensitivity": "Low",      "days_range": [195, 210] }
+    },
+    "hydrology": {
+      "kc_ini": 0.70, "kc_mid": 1.15, "kc_end": 0.25,
+      "p_depletion": 0.55,
+      "soil_texture_range": ["Sandy-Loam", "Loam", "Clay-Loam", "Clay"],
+      "ph_optimal": [6.0, 7.5], "ph_absolute": [5.5, 8.5],
+      "ec_max_ds_m": 6.0
+    },
+    "npk_phases": [
+      { "bbch_range": "00-09", "N_kg_ha": 30,  "P_kg_ha": 60, "K_kg_ha": 40, "note": "Basal application at sowing" },
+      { "bbch_range": "10-29", "N_kg_ha": 60,  "P_kg_ha": 20, "K_kg_ha": 20, "note": "Topdress at tillering" },
+      { "bbch_range": "30-49", "N_kg_ha": 80,  "P_kg_ha": 0,  "K_kg_ha": 30, "note": "Nitrogen at stem extension" }
+    ],
+    "phytosanitary": {
+      "native_resistances": [],
+      "high_vulnerability": ["Wheat Rust (Puccinia)", "Fusarium Head Blight", "Aphids"],
+      "fungal_risk_conditions": { "temp_above_c": 18, "humidity_above_pct": 75 },
+      "sar_schedule": [
+        { "bbch": "30", "compound": "Propiconazole", "rate_g_ha": 125, "target": "Brown Rust" }
+      ]
+    },
+    "economics": {
+      "processing_target": ["Human Consumption", "Livestock Feed"],
+      "harvest_index": 0.42,
+      "lodging_risk": "Medium",
+      "nutrient_depletion_rate": "Medium",
+      "market_price_usd_per_kg": 0.22,
+      "seed_cost_usd_per_ha": 60,
+      "initial_investment_usd_per_ha": 380,
+      "faostat_5yr_avg_usd_per_kg": 0.20
+    }
+  },
+  "HORVV": {
+    "eppo_code": "HORVV",
+    "common_name": "Barley",
+    "botanical": {
+      "family": "Poaceae",
+      "genus": "Hordeum",
+      "species": "Hordeum vulgare L.",
+      "koppen_zones": ["BSk", "BSh", "Csa", "Csb"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 130, "gdd_target": 1400, "gdd_base_temp_c": 0,  "germination_rate_pct": 90, "seed_halflife_years": 5, "drought_tolerance": 0.60, "yield_kg_ha": 2800 },
+      "Drought-Resistant": { "dtm": 115, "gdd_target": 1250, "gdd_base_temp_c": 0,  "germination_rate_pct": 87, "seed_halflife_years": 5, "drought_tolerance": 0.85, "yield_kg_ha": 2400 },
+      "High-Yield":        { "dtm": 145, "gdd_target": 1600, "gdd_base_temp_c": 0,  "germination_rate_pct": 93, "seed_halflife_years": 4, "drought_tolerance": 0.30, "yield_kg_ha": 5000 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Germination",       "sensitivity": "High",     "days_range": [0, 8] },
+      "10-29": { "stage": "Tillering",         "sensitivity": "Medium",   "days_range": [8, 45] },
+      "51-59": { "stage": "Heading",           "sensitivity": "Critical", "days_range": [80, 100] },
+      "71-89": { "stage": "Grain Fill",        "sensitivity": "High",     "days_range": [100, 125] }
+    },
+    "hydrology": {
+      "kc_ini": 0.70, "kc_mid": 1.15, "kc_end": 0.25,
+      "p_depletion": 0.55,
+      "soil_texture_range": ["Sandy-Loam", "Loam", "Clay-Loam"],
+      "ph_optimal": [6.0, 7.5], "ph_absolute": [5.0, 8.5],
+      "ec_max_ds_m": 8.0
+    },
+    "npk_phases": [
+      { "bbch_range": "00-09", "N_kg_ha": 30,  "P_kg_ha": 50, "K_kg_ha": 30, "note": "Basal at sowing" },
+      { "bbch_range": "10-29", "N_kg_ha": 60,  "P_kg_ha": 0,  "K_kg_ha": 20, "note": "Nitrogen topdress at tillering" }
+    ],
+    "phytosanitary": {
+      "native_resistances": ["Barley Yellow Dwarf (partial)"],
+      "high_vulnerability": ["Powdery Mildew", "Net Blotch", "Scald"],
+      "fungal_risk_conditions": { "temp_above_c": 15, "humidity_above_pct": 70 },
+      "sar_schedule": [
+        { "bbch": "30", "compound": "Tebuconazole", "rate_g_ha": 125, "target": "Net Blotch / Powdery Mildew" }
+      ]
+    },
+    "economics": {
+      "processing_target": ["Livestock Feed", "Malting/Brewing", "Human Consumption"],
+      "harvest_index": 0.44,
+      "lodging_risk": "High",
+      "nutrient_depletion_rate": "Medium",
+      "market_price_usd_per_kg": 0.18,
+      "seed_cost_usd_per_ha": 50,
+      "initial_investment_usd_per_ha": 300,
+      "faostat_5yr_avg_usd_per_kg": 0.17
+    }
+  },
+  "ZEAMX": {
+    "eppo_code": "ZEAMX",
+    "common_name": "Maize / Corn",
+    "botanical": {
+      "family": "Poaceae",
+      "genus": "Zea",
+      "species": "Zea mays L.",
+      "koppen_zones": ["BSh", "Csa", "Cfa", "Aw", "Am"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 110, "gdd_target": 1400, "gdd_base_temp_c": 10, "germination_rate_pct": 85, "seed_halflife_years": 3, "drought_tolerance": 0.35, "yield_kg_ha": 5500 },
+      "Drought-Resistant": { "dtm": 95,  "gdd_target": 1250, "gdd_base_temp_c": 10, "germination_rate_pct": 88, "seed_halflife_years": 4, "drought_tolerance": 0.80, "yield_kg_ha": 4200 },
+      "High-Yield":        { "dtm": 120, "gdd_target": 1550, "gdd_base_temp_c": 10, "germination_rate_pct": 90, "seed_halflife_years": 3, "drought_tolerance": 0.20, "yield_kg_ha": 8000 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Germination",         "sensitivity": "High",     "days_range": [0, 8] },
+      "10-19": { "stage": "Leaf Development",    "sensitivity": "Medium",   "days_range": [8, 25] },
+      "30-49": { "stage": "Stem Elongation",     "sensitivity": "Medium",   "days_range": [25, 60] },
+      "51-69": { "stage": "Silking/Pollination", "sensitivity": "Critical", "days_range": [60, 75] },
+      "71-89": { "stage": "Grain Fill",          "sensitivity": "High",     "days_range": [75, 105] },
+      "91-99": { "stage": "Maturation",          "sensitivity": "Low",      "days_range": [105, 115] }
+    },
+    "hydrology": {
+      "kc_ini": 0.30, "kc_mid": 1.20, "kc_end": 0.60,
+      "p_depletion": 0.55,
+      "soil_texture_range": ["Sandy-Loam", "Loam", "Clay-Loam"],
+      "ph_optimal": [6.0, 7.0], "ph_absolute": [5.5, 8.0],
+      "ec_max_ds_m": 1.7
+    },
+    "npk_phases": [
+      { "bbch_range": "00-19", "N_kg_ha": 40,  "P_kg_ha": 60, "K_kg_ha": 40, "note": "Starter at sowing" },
+      { "bbch_range": "20-49", "N_kg_ha": 80,  "P_kg_ha": 20, "K_kg_ha": 60, "note": "Side-dress N at V6 (6 leaves)" },
+      { "bbch_range": "50-89", "N_kg_ha": 100, "P_kg_ha": 0,  "K_kg_ha": 80, "note": "Top-dress before tasseling" }
+    ],
+    "phytosanitary": {
+      "native_resistances": ["Common Smut (partial)"],
+      "high_vulnerability": ["Fall Armyworm", "Northern Leaf Blight", "Gray Leaf Spot"],
+      "fungal_risk_conditions": { "temp_above_c": 25, "humidity_above_pct": 70 },
+      "sar_schedule": [
+        { "bbch": "30", "compound": "Acibenzolar-S-methyl", "rate_g_ha": 50, "target": "Helminthosporium" }
+      ]
+    },
+    "economics": {
+      "processing_target": ["Human Consumption", "Livestock Feed", "Bio-fuel"],
+      "harvest_index": 0.45,
+      "lodging_risk": "Medium",
+      "nutrient_depletion_rate": "High",
+      "market_price_usd_per_kg": 0.19,
+      "seed_cost_usd_per_ha": 85,
+      "initial_investment_usd_per_ha": 420,
+      "faostat_5yr_avg_usd_per_kg": 0.17
+    }
+  },
+  "LYPES": {
+    "eppo_code": "LYPES",
+    "common_name": "Tomato",
+    "botanical": {
+      "family": "Solanaceae",
+      "genus": "Solanum",
+      "species": "Solanum lycopersicum L.",
+      "koppen_zones": ["BSh", "Csa", "Cfa", "Aw"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 90,  "gdd_target": 1200, "gdd_base_temp_c": 10, "germination_rate_pct": 80, "seed_halflife_years": 4, "drought_tolerance": 0.30, "yield_kg_ha": 50000 },
+      "Drought-Resistant": { "dtm": 85,  "gdd_target": 1100, "gdd_base_temp_c": 10, "germination_rate_pct": 78, "seed_halflife_years": 4, "drought_tolerance": 0.65, "yield_kg_ha": 38000 },
+      "High-Yield":        { "dtm": 100, "gdd_target": 1350, "gdd_base_temp_c": 10, "germination_rate_pct": 85, "seed_halflife_years": 3, "drought_tolerance": 0.20, "yield_kg_ha": 80000 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Germination",         "sensitivity": "High",     "days_range": [0, 7] },
+      "10-19": { "stage": "Leaf Development",    "sensitivity": "Medium",   "days_range": [7, 25] },
+      "51-59": { "stage": "Flower Bud",          "sensitivity": "Critical", "days_range": [35, 55] },
+      "60-69": { "stage": "Flowering",           "sensitivity": "Critical", "days_range": [55, 70] },
+      "71-79": { "stage": "Fruit Set",           "sensitivity": "High",     "days_range": [70, 85] },
+      "81-89": { "stage": "Fruit Development",   "sensitivity": "Medium",   "days_range": [85, 95] }
+    },
+    "hydrology": {
+      "kc_ini": 0.60, "kc_mid": 1.15, "kc_end": 0.70,
+      "p_depletion": 0.40,
+      "soil_texture_range": ["Sandy-Loam", "Loam", "Clay-Loam"],
+      "ph_optimal": [6.0, 6.8], "ph_absolute": [5.5, 7.5],
+      "ec_max_ds_m": 2.5
+    },
+    "npk_phases": [
+      { "bbch_range": "00-19", "N_kg_ha": 50,  "P_kg_ha": 80, "K_kg_ha": 60,  "note": "Transplant starter" },
+      { "bbch_range": "20-59", "N_kg_ha": 80,  "P_kg_ha": 30, "K_kg_ha": 120, "note": "Vegetative growth" },
+      { "bbch_range": "60-89", "N_kg_ha": 60,  "P_kg_ha": 0,  "K_kg_ha": 200, "note": "Fruiting stage — high potassium" }
+    ],
+    "phytosanitary": {
+      "native_resistances": [],
+      "high_vulnerability": ["Late Blight (Phytophthora)", "Early Blight", "Whitefly", "Tomato Mosaic Virus"],
+      "fungal_risk_conditions": { "temp_above_c": 20, "humidity_above_pct": 80 },
+      "sar_schedule": [
+        { "bbch": "51", "compound": "Copper Hydroxide", "rate_g_ha": 1500, "target": "Late Blight prevention" }
+      ]
+    },
+    "economics": {
+      "processing_target": ["Human Consumption", "Processing/Paste"],
+      "harvest_index": 0.65,
+      "lodging_risk": "Low",
+      "nutrient_depletion_rate": "High",
+      "market_price_usd_per_kg": 0.55,
+      "seed_cost_usd_per_ha": 200,
+      "initial_investment_usd_per_ha": 3500,
+      "faostat_5yr_avg_usd_per_kg": 0.50
+    }
+  },
+  "SOLTU": {
+    "eppo_code": "SOLTU",
+    "common_name": "Potato",
+    "botanical": {
+      "family": "Solanaceae",
+      "genus": "Solanum",
+      "species": "Solanum tuberosum L.",
+      "koppen_zones": ["BSk", "Csb", "Cfb", "Csa"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 100, "gdd_target": 1200, "gdd_base_temp_c": 7,  "germination_rate_pct": 85, "seed_halflife_years": 1, "drought_tolerance": 0.25, "yield_kg_ha": 25000 },
+      "Drought-Resistant": { "dtm": 90,  "gdd_target": 1100, "gdd_base_temp_c": 7,  "germination_rate_pct": 83, "seed_halflife_years": 1, "drought_tolerance": 0.55, "yield_kg_ha": 18000 },
+      "High-Yield":        { "dtm": 115, "gdd_target": 1400, "gdd_base_temp_c": 7,  "germination_rate_pct": 90, "seed_halflife_years": 1, "drought_tolerance": 0.15, "yield_kg_ha": 45000 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Sprouting",          "sensitivity": "Medium",   "days_range": [0, 15] },
+      "10-19": { "stage": "Leaf Development",   "sensitivity": "Medium",   "days_range": [15, 35] },
+      "40-49": { "stage": "Tuber Initiation",   "sensitivity": "Critical", "days_range": [40, 65] },
+      "50-69": { "stage": "Tuber Bulking",      "sensitivity": "High",     "days_range": [65, 90] },
+      "91-99": { "stage": "Maturation",         "sensitivity": "Low",      "days_range": [90, 105] }
+    },
+    "hydrology": {
+      "kc_ini": 0.50, "kc_mid": 1.15, "kc_end": 0.75,
+      "p_depletion": 0.35,
+      "soil_texture_range": ["Sandy-Loam", "Loam"],
+      "ph_optimal": [5.0, 6.5], "ph_absolute": [4.5, 7.0],
+      "ec_max_ds_m": 1.7
+    },
+    "npk_phases": [
+      { "bbch_range": "00-19", "N_kg_ha": 60,  "P_kg_ha": 100, "K_kg_ha": 150, "note": "Basal at planting" },
+      { "bbch_range": "40-69", "N_kg_ha": 80,  "P_kg_ha": 20,  "K_kg_ha": 100, "note": "Topdress at tuber initiation" }
+    ],
+    "phytosanitary": {
+      "native_resistances": [],
+      "high_vulnerability": ["Late Blight (Phytophthora)", "Colorado Beetle", "Potato Scab"],
+      "fungal_risk_conditions": { "temp_above_c": 15, "humidity_above_pct": 80 },
+      "sar_schedule": [
+        { "bbch": "40", "compound": "Metalaxyl-M + Mancozeb", "rate_g_ha": 2000, "target": "Late Blight" }
+      ]
+    },
+    "economics": {
+      "processing_target": ["Human Consumption", "Processing (Chips/Fries)", "Starch"],
+      "harvest_index": 0.75,
+      "lodging_risk": "Low",
+      "nutrient_depletion_rate": "High",
+      "market_price_usd_per_kg": 0.28,
+      "seed_cost_usd_per_ha": 800,
+      "initial_investment_usd_per_ha": 2200,
+      "faostat_5yr_avg_usd_per_kg": 0.25
+    }
+  },
+  "HEFAN": {
+    "eppo_code": "HEFAN",
+    "common_name": "Sunflower",
+    "botanical": {
+      "family": "Asteraceae",
+      "genus": "Helianthus",
+      "species": "Helianthus annuus L.",
+      "koppen_zones": ["BSh", "BSk", "Csa", "Cfa"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 110, "gdd_target": 1400, "gdd_base_temp_c": 6,  "germination_rate_pct": 85, "seed_halflife_years": 3, "drought_tolerance": 0.60, "yield_kg_ha": 2000 },
+      "Drought-Resistant": { "dtm": 100, "gdd_target": 1300, "gdd_base_temp_c": 6,  "germination_rate_pct": 83, "seed_halflife_years": 3, "drought_tolerance": 0.85, "yield_kg_ha": 1700 },
+      "High-Yield":        { "dtm": 120, "gdd_target": 1550, "gdd_base_temp_c": 6,  "germination_rate_pct": 88, "seed_halflife_years": 3, "drought_tolerance": 0.35, "yield_kg_ha": 3500 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Germination",    "sensitivity": "High",     "days_range": [0, 10] },
+      "10-19": { "stage": "Leaf Development","sensitivity": "Medium",  "days_range": [10, 35] },
+      "51-59": { "stage": "Budding",        "sensitivity": "Critical", "days_range": [60, 75] },
+      "61-69": { "stage": "Flowering",      "sensitivity": "Critical", "days_range": [75, 90] },
+      "71-89": { "stage": "Seed Fill",      "sensitivity": "High",     "days_range": [90, 110] }
+    },
+    "hydrology": {
+      "kc_ini": 0.35, "kc_mid": 1.10, "kc_end": 0.35,
+      "p_depletion": 0.45,
+      "soil_texture_range": ["Sandy-Loam", "Loam", "Clay-Loam", "Clay"],
+      "ph_optimal": [6.0, 7.5], "ph_absolute": [5.5, 8.0],
+      "ec_max_ds_m": 4.8
+    },
+    "npk_phases": [
+      { "bbch_range": "00-19", "N_kg_ha": 40, "P_kg_ha": 60, "K_kg_ha": 60, "note": "Basal at sowing" },
+      { "bbch_range": "20-59", "N_kg_ha": 60, "P_kg_ha": 0,  "K_kg_ha": 30, "note": "Topdress at V4-V6" }
+    ],
+    "phytosanitary": {
+      "native_resistances": [],
+      "high_vulnerability": ["Sunflower Rust", "Sclerotinia (White Mold)", "Downy Mildew"],
+      "fungal_risk_conditions": { "temp_above_c": 20, "humidity_above_pct": 75 },
+      "sar_schedule": [
+        { "bbch": "51", "compound": "Azoxystrobin", "rate_g_ha": 100, "target": "Sclerotinia" }
+      ]
+    },
+    "economics": {
+      "processing_target": ["Bio-fuel", "Human Consumption (Oil)", "Livestock Feed (Meal)"],
+      "harvest_index": 0.30,
+      "lodging_risk": "Low",
+      "nutrient_depletion_rate": "Medium",
+      "market_price_usd_per_kg": 0.45,
+      "seed_cost_usd_per_ha": 70,
+      "initial_investment_usd_per_ha": 480,
+      "faostat_5yr_avg_usd_per_kg": 0.42
+    }
+  },
+  "ALLCE": {
+    "eppo_code": "ALLCE",
+    "common_name": "Onion (Dry Bulb)",
+    "botanical": {
+      "family": "Amaryllidaceae",
+      "genus": "Allium",
+      "species": "Allium cepa L.",
+      "koppen_zones": ["BSh", "BSk", "Csa"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 140, "gdd_target": 1500, "gdd_base_temp_c": 5,  "germination_rate_pct": 75, "seed_halflife_years": 1, "drought_tolerance": 0.20, "yield_kg_ha": 30000 },
+      "Drought-Resistant": { "dtm": 130, "gdd_target": 1400, "gdd_base_temp_c": 5,  "germination_rate_pct": 72, "seed_halflife_years": 1, "drought_tolerance": 0.45, "yield_kg_ha": 22000 },
+      "High-Yield":        { "dtm": 155, "gdd_target": 1650, "gdd_base_temp_c": 5,  "germination_rate_pct": 80, "seed_halflife_years": 1, "drought_tolerance": 0.15, "yield_kg_ha": 50000 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Germination",     "sensitivity": "High",     "days_range": [0, 10] },
+      "10-19": { "stage": "Leaf Development","sensitivity": "High",     "days_range": [10, 40] },
+      "40-49": { "stage": "Bulb Formation",  "sensitivity": "Critical", "days_range": [80, 120] },
+      "91-99": { "stage": "Maturation",      "sensitivity": "Low",      "days_range": [120, 145] }
+    },
+    "hydrology": {
+      "kc_ini": 0.50, "kc_mid": 1.00, "kc_end": 0.75,
+      "p_depletion": 0.30,
+      "soil_texture_range": ["Sandy-Loam", "Loam"],
+      "ph_optimal": [6.0, 7.0], "ph_absolute": [5.5, 7.5],
+      "ec_max_ds_m": 1.2
+    },
+    "npk_phases": [
+      { "bbch_range": "00-19", "N_kg_ha": 50, "P_kg_ha": 60, "K_kg_ha": 80,  "note": "Starter at transplant" },
+      { "bbch_range": "40-49", "N_kg_ha": 60, "P_kg_ha": 0,  "K_kg_ha": 120, "note": "Bulbing stage — high K" }
+    ],
+    "phytosanitary": {
+      "native_resistances": [],
+      "high_vulnerability": ["Purple Blotch", "Onion Thrips", "Downy Mildew"],
+      "fungal_risk_conditions": { "temp_above_c": 22, "humidity_above_pct": 75 },
+      "sar_schedule": []
+    },
+    "economics": {
+      "processing_target": ["Human Consumption"],
+      "harvest_index": 0.70,
+      "lodging_risk": "Low",
+      "nutrient_depletion_rate": "Medium",
+      "market_price_usd_per_kg": 0.35,
+      "seed_cost_usd_per_ha": 120,
+      "initial_investment_usd_per_ha": 1800,
+      "faostat_5yr_avg_usd_per_kg": 0.30
+    }
+  },
+  "CITLA": {
+    "eppo_code": "CITLA",
+    "common_name": "Watermelon",
+    "botanical": {
+      "family": "Cucurbitaceae",
+      "genus": "Citrullus",
+      "species": "Citrullus lanatus (Thunb.) Matsum. & Nakai",
+      "koppen_zones": ["BSh", "BWh", "Csa", "Aw"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 85,  "gdd_target": 1100, "gdd_base_temp_c": 10, "germination_rate_pct": 85, "seed_halflife_years": 5, "drought_tolerance": 0.55, "yield_kg_ha": 35000 },
+      "Drought-Resistant": { "dtm": 80,  "gdd_target": 1000, "gdd_base_temp_c": 10, "germination_rate_pct": 82, "seed_halflife_years": 5, "drought_tolerance": 0.75, "yield_kg_ha": 25000 },
+      "High-Yield":        { "dtm": 95,  "gdd_target": 1200, "gdd_base_temp_c": 10, "germination_rate_pct": 88, "seed_halflife_years": 4, "drought_tolerance": 0.30, "yield_kg_ha": 55000 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Germination",   "sensitivity": "High",     "days_range": [0, 7] },
+      "51-59": { "stage": "Flower Bud",    "sensitivity": "Critical", "days_range": [30, 45] },
+      "71-79": { "stage": "Fruit Set",     "sensitivity": "High",     "days_range": [45, 65] },
+      "81-89": { "stage": "Fruit Fill",    "sensitivity": "High",     "days_range": [65, 85] }
+    },
+    "hydrology": {
+      "kc_ini": 0.40, "kc_mid": 1.00, "kc_end": 0.75,
+      "p_depletion": 0.40,
+      "soil_texture_range": ["Sandy", "Sandy-Loam", "Loam"],
+      "ph_optimal": [6.0, 7.0], "ph_absolute": [5.5, 7.5],
+      "ec_max_ds_m": 2.5
+    },
+    "npk_phases": [
+      { "bbch_range": "00-29", "N_kg_ha": 40, "P_kg_ha": 60, "K_kg_ha": 80,  "note": "Starter + preplant" },
+      { "bbch_range": "71-89", "N_kg_ha": 30, "P_kg_ha": 0,  "K_kg_ha": 120, "note": "Fruit fill — high K for sugar" }
+    ],
+    "phytosanitary": {
+      "native_resistances": [],
+      "high_vulnerability": ["Fusarium Wilt", "Powdery Mildew", "Aphids"],
+      "fungal_risk_conditions": { "temp_above_c": 28, "humidity_above_pct": 65 },
+      "sar_schedule": []
+    },
+    "economics": {
+      "processing_target": ["Human Consumption"],
+      "harvest_index": 0.80,
+      "lodging_risk": "Low",
+      "nutrient_depletion_rate": "Medium",
+      "market_price_usd_per_kg": 0.22,
+      "seed_cost_usd_per_ha": 150,
+      "initial_investment_usd_per_ha": 1200,
+      "faostat_5yr_avg_usd_per_kg": 0.20
+    }
+  },
+  "CPSAN": {
+    "eppo_code": "CPSAN",
+    "common_name": "Bell Pepper / Sweet Pepper",
+    "botanical": {
+      "family": "Solanaceae",
+      "genus": "Capsicum",
+      "species": "Capsicum annuum L.",
+      "koppen_zones": ["BSh", "Csa", "Cfa"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 100, "gdd_target": 1300, "gdd_base_temp_c": 10, "germination_rate_pct": 80, "seed_halflife_years": 4, "drought_tolerance": 0.25, "yield_kg_ha": 20000 },
+      "Drought-Resistant": { "dtm": 95,  "gdd_target": 1200, "gdd_base_temp_c": 10, "germination_rate_pct": 78, "seed_halflife_years": 4, "drought_tolerance": 0.55, "yield_kg_ha": 14000 },
+      "High-Yield":        { "dtm": 110, "gdd_target": 1450, "gdd_base_temp_c": 10, "germination_rate_pct": 85, "seed_halflife_years": 3, "drought_tolerance": 0.15, "yield_kg_ha": 35000 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Germination",  "sensitivity": "High",     "days_range": [0, 10] },
+      "60-69": { "stage": "Flowering",    "sensitivity": "Critical", "days_range": [50, 70] },
+      "71-79": { "stage": "Fruit Set",    "sensitivity": "High",     "days_range": [70, 90] },
+      "81-89": { "stage": "Fruit Ripening","sensitivity": "Medium",  "days_range": [90, 105] }
+    },
+    "hydrology": {
+      "kc_ini": 0.60, "kc_mid": 1.05, "kc_end": 0.90,
+      "p_depletion": 0.30,
+      "soil_texture_range": ["Sandy-Loam", "Loam"],
+      "ph_optimal": [6.0, 6.8], "ph_absolute": [5.5, 7.5],
+      "ec_max_ds_m": 1.5
+    },
+    "npk_phases": [
+      { "bbch_range": "00-29", "N_kg_ha": 60,  "P_kg_ha": 80, "K_kg_ha": 80,  "note": "Pre-plant basal" },
+      { "bbch_range": "60-89", "N_kg_ha": 60,  "P_kg_ha": 0,  "K_kg_ha": 150, "note": "Fruiting — high K" }
+    ],
+    "phytosanitary": {
+      "native_resistances": [],
+      "high_vulnerability": ["Phytophthora Root Rot", "Pepper Mild Mottle Virus", "Spider Mites"],
+      "fungal_risk_conditions": { "temp_above_c": 25, "humidity_above_pct": 75 },
+      "sar_schedule": []
+    },
+    "economics": {
+      "processing_target": ["Human Consumption"],
+      "harvest_index": 0.65,
+      "lodging_risk": "Low",
+      "nutrient_depletion_rate": "High",
+      "market_price_usd_per_kg": 0.80,
+      "seed_cost_usd_per_ha": 250,
+      "initial_investment_usd_per_ha": 4500,
+      "faostat_5yr_avg_usd_per_kg": 0.72
+    }
+  },
+  "GOSHI": {
+    "eppo_code": "GOSHI",
+    "common_name": "Cotton",
+    "botanical": {
+      "family": "Malvaceae",
+      "genus": "Gossypium",
+      "species": "Gossypium hirsutum L.",
+      "koppen_zones": ["BSh", "BWh", "Csa", "Aw"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 175, "gdd_target": 2200, "gdd_base_temp_c": 15, "germination_rate_pct": 80, "seed_halflife_years": 3, "drought_tolerance": 0.55, "yield_kg_ha": 1200 },
+      "Drought-Resistant": { "dtm": 160, "gdd_target": 2000, "gdd_base_temp_c": 15, "germination_rate_pct": 78, "seed_halflife_years": 3, "drought_tolerance": 0.80, "yield_kg_ha": 1000 },
+      "High-Yield":        { "dtm": 190, "gdd_target": 2400, "gdd_base_temp_c": 15, "germination_rate_pct": 85, "seed_halflife_years": 3, "drought_tolerance": 0.30, "yield_kg_ha": 2000 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Germination",    "sensitivity": "High",     "days_range": [0, 10] },
+      "51-59": { "stage": "Square/Bud",     "sensitivity": "Critical", "days_range": [50, 80] },
+      "60-69": { "stage": "Flowering",      "sensitivity": "Critical", "days_range": [80, 110] },
+      "71-89": { "stage": "Boll Development","sensitivity": "High",    "days_range": [110, 165] }
+    },
+    "hydrology": {
+      "kc_ini": 0.35, "kc_mid": 1.15, "kc_end": 0.50,
+      "p_depletion": 0.65,
+      "soil_texture_range": ["Sandy-Loam", "Loam", "Clay-Loam", "Clay"],
+      "ph_optimal": [6.0, 7.5], "ph_absolute": [5.5, 8.0],
+      "ec_max_ds_m": 7.7
+    },
+    "npk_phases": [
+      { "bbch_range": "00-29", "N_kg_ha": 40, "P_kg_ha": 60, "K_kg_ha": 60, "note": "Pre-plant basal" },
+      { "bbch_range": "51-69", "N_kg_ha": 80, "P_kg_ha": 20, "K_kg_ha": 40, "note": "Square to peak bloom" }
+    ],
+    "phytosanitary": {
+      "native_resistances": ["Bt (in GMO varieties only)"],
+      "high_vulnerability": ["Bollworm", "Cotton Aphid", "Verticillium Wilt"],
+      "fungal_risk_conditions": { "temp_above_c": 28, "humidity_above_pct": 70 },
+      "sar_schedule": []
+    },
+    "economics": {
+      "processing_target": ["Textile", "Bio-fuel (Cottonseed Oil)", "Livestock Feed (Cottonseed Meal)"],
+      "harvest_index": 0.38,
+      "lodging_risk": "Low",
+      "nutrient_depletion_rate": "High",
+      "market_price_usd_per_kg": 1.65,
+      "seed_cost_usd_per_ha": 100,
+      "initial_investment_usd_per_ha": 850,
+      "faostat_5yr_avg_usd_per_kg": 1.55
+    }
+  },
+  "CICAR": {
+    "eppo_code": "CICAR",
+    "common_name": "Chickpea",
+    "botanical": {
+      "family": "Fabaceae",
+      "genus": "Cicer",
+      "species": "Cicer arietinum L.",
+      "koppen_zones": ["BSh", "BSk", "Csa"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 110, "gdd_target": 1400, "gdd_base_temp_c": 5,  "germination_rate_pct": 90, "seed_halflife_years": 4, "drought_tolerance": 0.65, "yield_kg_ha": 1200 },
+      "Drought-Resistant": { "dtm": 100, "gdd_target": 1300, "gdd_base_temp_c": 5,  "germination_rate_pct": 88, "seed_halflife_years": 4, "drought_tolerance": 0.85, "yield_kg_ha": 1000 },
+      "High-Yield":        { "dtm": 120, "gdd_target": 1600, "gdd_base_temp_c": 5,  "germination_rate_pct": 92, "seed_halflife_years": 3, "drought_tolerance": 0.40, "yield_kg_ha": 2200 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Germination",   "sensitivity": "High",     "days_range": [0, 10] },
+      "30-49": { "stage": "Vegetative",    "sensitivity": "Medium",   "days_range": [20, 60] },
+      "60-69": { "stage": "Flowering",     "sensitivity": "Critical", "days_range": [60, 80] },
+      "71-89": { "stage": "Pod Fill",      "sensitivity": "High",     "days_range": [80, 105] }
+    },
+    "hydrology": {
+      "kc_ini": 0.40, "kc_mid": 1.00, "kc_end": 0.35,
+      "p_depletion": 0.50,
+      "soil_texture_range": ["Sandy-Loam", "Loam", "Clay-Loam"],
+      "ph_optimal": [6.0, 7.5], "ph_absolute": [5.5, 8.5],
+      "ec_max_ds_m": 3.9
+    },
+    "npk_phases": [
+      { "bbch_range": "00-09", "N_kg_ha": 20, "P_kg_ha": 60, "K_kg_ha": 40, "note": "Starter — N-fix from BBCH 10 onward" },
+      { "bbch_range": "60-89", "N_kg_ha": 0,  "P_kg_ha": 20, "K_kg_ha": 30, "note": "Foliar micronutrients at pod fill" }
+    ],
+    "phytosanitary": {
+      "native_resistances": ["Nitrogen Fixation (self-fertilizing legume)"],
+      "high_vulnerability": ["Ascochyta Blight", "Helicoverpa Pod Borer", "Fusarium Wilt"],
+      "fungal_risk_conditions": { "temp_above_c": 20, "humidity_above_pct": 70 },
+      "sar_schedule": [
+        { "bbch": "30", "compound": "Chlorothalonil", "rate_g_ha": 1500, "target": "Ascochyta Blight" }
+      ]
+    },
+    "economics": {
+      "processing_target": ["Human Consumption", "Livestock Feed"],
+      "harvest_index": 0.38,
+      "lodging_risk": "Low",
+      "nutrient_depletion_rate": "Low",
+      "market_price_usd_per_kg": 0.65,
+      "seed_cost_usd_per_ha": 120,
+      "initial_investment_usd_per_ha": 380,
+      "faostat_5yr_avg_usd_per_kg": 0.60
+    }
+  },
+  "MEDSA": {
+    "eppo_code": "MEDSA",
+    "common_name": "Alfalfa (Lucerne)",
+    "botanical": {
+      "family": "Fabaceae",
+      "genus": "Medicago",
+      "species": "Medicago sativa L.",
+      "koppen_zones": ["BSh", "BSk", "Csa", "Csb", "Cfa"]
+    },
+    "cultivar_profiles": {
+      "Standard":          { "dtm": 60,  "gdd_target": 700,  "gdd_base_temp_c": 5,  "germination_rate_pct": 85, "seed_halflife_years": 5, "drought_tolerance": 0.65, "yield_kg_ha": 12000 },
+      "Drought-Resistant": { "dtm": 55,  "gdd_target": 650,  "gdd_base_temp_c": 5,  "germination_rate_pct": 83, "seed_halflife_years": 5, "drought_tolerance": 0.85, "yield_kg_ha": 9000 },
+      "High-Yield":        { "dtm": 65,  "gdd_target": 750,  "gdd_base_temp_c": 5,  "germination_rate_pct": 88, "seed_halflife_years": 4, "drought_tolerance": 0.40, "yield_kg_ha": 18000 }
+    },
+    "bbch_matrix": {
+      "00-09": { "stage": "Germination",     "sensitivity": "High",   "days_range": [0, 8] },
+      "10-19": { "stage": "Leaf Development","sensitivity": "Medium", "days_range": [8, 25] },
+      "60-69": { "stage": "Flowering (cut)", "sensitivity": "Low",    "days_range": [35, 60] }
+    },
+    "hydrology": {
+      "kc_ini": 0.40, "kc_mid": 1.15, "kc_end": 1.10,
+      "p_depletion": 0.55,
+      "soil_texture_range": ["Sandy-Loam", "Loam", "Clay-Loam"],
+      "ph_optimal": [6.5, 7.5], "ph_absolute": [6.0, 8.0],
+      "ec_max_ds_m": 2.0
+    },
+    "npk_phases": [
+      { "bbch_range": "00-09", "N_kg_ha": 20,  "P_kg_ha": 80, "K_kg_ha": 100, "note": "Establishment — inoculate with Rhizobium" },
+      { "bbch_range": "10-69", "N_kg_ha": 0,   "P_kg_ha": 40, "K_kg_ha": 80,  "note": "Per cut — P and K maintenance" }
+    ],
+    "phytosanitary": {
+      "native_resistances": ["Nitrogen Fixation (N-fixing legume)"],
+      "high_vulnerability": ["Alfalfa Weevil", "Aphids", "Phytophthora Root Rot"],
+      "fungal_risk_conditions": { "temp_above_c": 18, "humidity_above_pct": 80 },
+      "sar_schedule": []
+    },
+    "economics": {
+      "processing_target": ["Livestock Feed (Hay/Silage)", "Pharmacological (Saponins)"],
+      "harvest_index": 0.90,
+      "lodging_risk": "Low",
+      "nutrient_depletion_rate": "Low",
+      "market_price_usd_per_kg": 0.18,
+      "seed_cost_usd_per_ha": 40,
+      "initial_investment_usd_per_ha": 280,
+      "faostat_5yr_avg_usd_per_kg": 0.16
+    }
+  }
+}
