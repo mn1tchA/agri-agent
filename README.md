@@ -1,4 +1,4 @@
-# 🌾 Agri-Agent Swarm v2.0
+#  Agri-Agent Swarm v2.0
 
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-success) ![Python](https://img.shields.io/badge/Python-3.11+-blue) ![React](https://img.shields.io/badge/React-19-cyan) ![LangGraph](https://img.shields.io/badge/AI-LangGraph%20Swarm-purple) ![MCP](https://img.shields.io/badge/Protocol-MCP-orange) ![Version](https://img.shields.io/badge/Version-2.0-orange)
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 🌊 The Crisis This Solves
+##  The Crisis This Solves
 
 Algeria is among the world's most acutely water-stressed nations:
 
@@ -24,7 +24,7 @@ This system is directly inspired by the **Gardens of Babylon** project in **Masc
 
 ---
 
-## ✨ Features
+##  Features
 
 - **Parallel Multi-Agent Orchestration**: Meteorologist and Botanist agents run concurrently (fan-out/fan-in), cutting pipeline latency by ~50%
 - **Critical Anomaly Detection**: `anomaly_check_node` inspects live sensor readings for extreme heat (>45°C), sensor flooding (>92%), sensor failure (<1%), and critical salinity (>8 dS/m) — routing directly to human review without wasting LLM API calls
@@ -46,7 +46,7 @@ This system is directly inspired by the **Gardens of Babylon** project in **Masc
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
                     ┌─────────────────────┐
@@ -83,7 +83,7 @@ This system is directly inspired by the **Gardens of Babylon** project in **Masc
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Layer | Technologies |
 |-------|-------------|
@@ -96,7 +96,7 @@ This system is directly inspired by the **Gardens of Babylon** project in **Masc
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Configure Environment
 
@@ -149,7 +149,7 @@ python migrate_db.py
 
 ---
 
-## 📡 API Endpoints
+##  API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -162,7 +162,7 @@ python migrate_db.py
 
 ---
 
-## 🔌 MCP Tools
+##  MCP Tools
 
 The `mcp_server.py` exposes three MCP-compliant tools callable by any MCP-compatible agent or IDE:
 
@@ -174,7 +174,7 @@ The `mcp_server.py` exposes three MCP-compliant tools callable by any MCP-compat
 
 ---
 
-## 💡 Key Architecture Decisions
+##  Key Architecture Decisions
 
 ### Why LangGraph?
 LangGraph's directed acyclic graph model is the only framework that natively supports **stateful durable execution** and **interrupt-based HITL** checkpoints via SQLite persistence — essential for physical-world actuation where the graph must survive across HTTP requests.
@@ -196,7 +196,7 @@ The WaPOR platform (Water Productivity through Open access of Remotely sensed da
 
 ---
 
-## 📸 Screenshots
+##  Screenshots
 
 Run the app locally and navigate to `http://localhost:5173` to see the live dashboard.
 Key screens:
@@ -209,7 +209,7 @@ Key screens:
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ```bash
 pip install pytest pytest-asyncio
