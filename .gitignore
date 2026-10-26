@@ -17,6 +17,8 @@ env/
 
 # Environment variables - NEVER commit this
 .env
+# Safe template to commit:
+# .env.example should be committed — it contains no secrets
 
 # Database files
 *.db
@@ -49,3 +51,14 @@ Thumbs.db
 # Development/debug artifacts
 out.txt
 verify_v2.py
+
+# Test coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# Mypy cache
+.mypy_cache/
+
+# Ruff cache
+.ruff_cache/

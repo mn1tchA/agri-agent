@@ -7,6 +7,8 @@ from typing import TypedDict, Optional
 class FarmState(TypedDict):
     # --- Pipeline Run Identity ---
     thread_id: str             # pipeline run ID for MCP audit tracing
+    farm_id: Optional[int]     # multi-tenant farm ID
+    user_id: Optional[int]     # initiating user ID
 
     # --- Farm Identity & Location ---
     crop_type: str

@@ -1,0 +1,88 @@
+[project]
+name = "agri-agent"
+version = "2.1.0"
+description = "Multi-agent autonomous agricultural decision system"
+requires-python = ">=3.11"
+
+# =============================================================================
+# Ruff — linter + formatter (replaces flake8, isort, black, pyupgrade)
+# Run: ruff check . --fix && ruff format .
+# =============================================================================
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["."]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade (modernise syntax)
+    "B",    # flake8-bugbear (common bugs)
+    "A",    # flake8-builtins
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+    "RUF",  # ruff-specific rules
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in default args (FastAPI uses this intentionally)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "graph", "nodes", "state", "memory", "database", "security", "mcp_server"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+# =============================================================================
+# Pytest
+# =============================================================================
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = [
+    "--cov=.",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-fail-under=70",           # Fail the CI build if coverage drops below 70%
+    "-v",
+]
+# Exclude non-source directories from coverage
+[tool.coverage.run]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "verify_v2.py",
+    "migrate_db.py",
+    "agri-dashboard/*",
+    "node_modules/*",
+    ".venv/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+# =============================================================================
+# Mypy — static type checker
+# Run: mypy . --ignore-missing-imports
+# =============================================================================
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true       # Many langchain packages lack stubs
+disallow_untyped_defs = false       # Relax for gradual adoption; tighten over time
+exclude = [
+    "agri-dashboard",
+    "node_modules",
+    ".venv",
+    "tests",
+]

@@ -88,3 +88,51 @@ export type AgentStep =
   | 'awaiting'
   | 'done'
   | 'error';
+
+export interface Farm {
+  id: number;
+  name: string;
+  owner_id?: number | null;
+  crop_type: string;
+  farm_area_sqm: number;
+  latitude: number;
+  longitude: number;
+  moisture_threshold: number;
+  water_salinity: number;
+  plant_growth_stage: string;
+  auto_irrigate_enabled?: boolean;
+  created_at?: string;
+}
+
+export interface ValveCommand {
+  id?: number;
+  command_id: string;
+  thread_id: string;
+  farm_id?: number | null;
+  crop_type: string;
+  command: string;
+  volume_dispatched_liters: number;
+  target_coordinates: string;
+  water_salinity_ds_m: number;
+  dilution_protocol: string;
+  status: string;
+  hardware_ack: string;
+  timestamp_utc: string;
+}
+
+export interface AlertLogItem {
+  id: number;
+  timestamp: string;
+  farm_id?: number | null;
+  alert_type: string;
+  severity: string;
+  message: string;
+  channel: string;
+  acknowledged: boolean;
+}
+
+export interface UserSession {
+  username: string;
+  role: 'viewer' | 'operator' | 'admin';
+  user_id?: number | null;
+}

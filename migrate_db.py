@@ -32,6 +32,8 @@ NEW_COLUMNS = [
     ("reasoning_confidence", "REAL", "0.0"),
     ("crop_value_at_risk_dzd", "REAL", "0.0"),
     ("outcome_rating", "INTEGER", "NULL"),
+    ("farm_id", "INTEGER", "NULL"),
+    ("user_id", "INTEGER", "NULL"),
 ]
 
 
