@@ -1,282 +1,309 @@
-# 🌾 Agri-Agent Swarm v2.2
+# Agri-Agent Swarm
 
-![Status](https://img.shields.io/badge/Status-Production%20Ready-success) ![Python](https://img.shields.io/badge/Python-3.11+-blue) ![React](https://img.shields.io/badge/React-19-cyan) ![LangGraph](https://img.shields.io/badge/AI-LangGraph%20Swarm-purple) ![MCP](https://img.shields.io/badge/Protocol-MCP-orange) ![Version](https://img.shields.io/badge/Version-2.2-orange)
+[![CI](https://github.com/mn1tchA/agri-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/mn1tchA/agri-agent/actions/workflows/ci.yml)
+[![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/backend-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
+[![React Version](https://img.shields.io/badge/frontend-React%2019-61DAFB.svg)](https://react.dev/)
+[![LangGraph](https://img.shields.io/badge/orchestration-LangGraph-darkviolet.svg)](https://langchain-ai.github.io/langgraph/)
+[![Protocol](https://img.shields.io/badge/hardware-MCP%20Standard-orange.svg)](https://modelcontextprotocol.io/)
+[![Coverage](https://img.shields.io/badge/coverage-70%25+-brightgreen.svg)]()
 
-**Agri-Agent Swarm** is an enterprise-grade, Multi-Agent Autonomous Agricultural system built to democratize precision agriculture in water-stressed regions. It deploys a **LangGraph Swarm** of specialized AI agents — meteorologist, botanist, financial director — orchestrated with **parallel execution**, **critical anomaly detection**, **Vector RAG Memory**, **real FAO satellite data**, and **MCP hardware actuation** to make financially optimized, physically-grounded irrigation decisions.
-
----
-
-## 🌊 The Crisis This Solves
-
-Algeria is among the world's most acutely water-stressed nations:
-
-| Year | Per-Capita Water Availability |
-|------|------------------------------|
-| 1962 | 1,500 m³/person/year |
-| 2000 | 720 m³/person/year |
-| **2050 (projected)** | **220 m³/person/year** |
-
-Agriculture is the **single largest consumer** of this collapsing resource — accounting for over 70% of all water withdrawn nationally. Traditional farming, relying on human intuition and manual observation, is fundamentally incapable of managing water efficiency at scale under these pressures.
-
-This system is directly inspired by the **Gardens of Babylon** project in **Mascara, Algeria** — a landmark vertical farming initiative that proved water-efficient, AI-assisted cultivation is achievable even in the most arid Mediterranean climates. Agri-Agent Swarm translates that vision into a fully autonomous, API-driven agentic pipeline, making these capabilities accessible beyond well-funded institutions.
-
-**The financial case**: Water costs for a 10,000 m² Algerian wheat farm under standard irrigation routinely exceed 15,000 DZD per cycle. A 20% reduction in unnecessary irrigation events — achievable with this system's real-time AI decision-making — represents a measurable, compounding return on every run.
+Autonomous multi-agent precision agriculture platform designed for water-stressed environments. The system orchestrates specialized agent swarms (meteorological forecasting, agronomic stress evaluation, and financial cost-benefit modeling) with deterministic sensor safety gates, vector memory retrieval, satellite evapotranspiration data, and Model Context Protocol (MCP) physical actuation.
 
 ---
 
-## ✨ Features
+## Problem Statement
 
-- **Parallel Multi-Agent Orchestration**: Meteorologist and Botanist agents run concurrently (fan-out/fan-in), cutting pipeline latency by ~50%
-- **Critical Anomaly Detection**: `anomaly_check_node` inspects live sensor readings for extreme heat (>45°C), sensor flooding (>92%), sensor failure (<1%), and critical salinity (>8 dS/m) — routing directly to human review without wasting LLM API calls
-- **Multi-Tenancy & Farm Isolation**: Complete `User` and `Farm` data models with role-based access control (`admin`, `operator`, `viewer`), farm selection, and scoped audit trails
-- **MCP Hardware Actuation & SQLite Persistence**: `actuator_node` calls an **MCP-compliant** FastMCP server (`irrigate_valve`, `emergency_stop`, `get_valve_status`, `list_recent_valves`) backed by SQLite so physical valve commands survive restarts
-- **Alembic Versioned Migrations**: Automated, version-controlled database schema management with SQLite batch support
-- **Automated Scheduled Farm Surveillance**: Built-in APScheduler daemon performing periodic background health and anomaly checks across all registered farms
-- **Multi-Channel Alerting**: Instant dispatch of critical sensor and agronomic alerts to in-app notification center, webhooks, and email
-- **Full Observability Stack**: Prometheus metrics at `/metrics`, OpenTelemetry distributed tracing, and LangSmith diagnostics
-- **FAO Satellite Water Productivity**: Live **ET₀ evapotranspiration** data from Open-Meteo (FAO-56 Penman-Monteith method — the same scientific basis as the FAO WaPOR platform used for regional water productivity monitoring across Algeria and North Africa)
-- **Long-Term RAG Memory**: ChromaDB + Gemini Embeddings with **crop-type filtering** for targeted historical retrieval
-- **SSE Streaming**: Real-time agent thoughts streamed to the React frontend via Server-Sent Events
-- **Enterprise Frontend**: React 19, TypeScript, Zustand state management (`useAuthStore`, `useFarmStore`), and React Router with protected routes (`/login`, `/dashboard`, `/analytics`, `/farms`)
-- **Rigorous Test Coverage**: 77 unit and integration tests with strict `>= 70%` automated coverage gates
+Mediterranean and North African agricultural regions face unprecedented structural water deficits:
+
+| Year | Per-Capita Renewable Water Availability | Context |
+|:---|:---|:---|
+| 1962 | 1,500 m³ / person / year | Baseline post-independence |
+| 2000 | 720 m³ / person / year | Below international water poverty line |
+| **2050 (Projected)** | **220 m³ / person / year** | Severe structural scarcity |
+
+Agriculture accounts for over **70% of total national freshwater withdrawals** in Algeria. Conventional irrigation schedules rely primarily on static calendar intervals or visual soil inspection, leading to substantial over-irrigation during humid periods and under-irrigation during extreme heat anomalies.
+
+Inspired by vertical farming automation initiatives in Mascara, Algeria, Agri-Agent Swarm implements an end-to-end autonomous decision loop that optimizes irrigation volume against real-time physical constraints, satellite water productivity indices, and energy/water tariffs.
 
 ---
 
-## 🏗️ Architecture
+## System Architecture
 
 ```
-                    ┌─────────────────────┐
-                    │  IoT / Open-Meteo   │  ← temp, soil moisture, ET₀ (WaPOR proxy),
-                    │  FAO ET₀ (WaPOR)    │    3-day precipitation forecast
-                    └────────┬────────────┘
-                             │
-                    ┌────────▼────────────┐
-                    │  data_aggregation   │
-                    └────────┬────────────┘
-                             │
-                    ┌────────▼────────────┐
-                    │   anomaly_check     │  ← heat >45°C, flood >92%, failure <1%, salinity >8
-                    └────────┬────────────┘
-              ┌──────────────┤
-        anomaly│             │normal (fan-out)
-              ▼              ▼              ▼
-    human_approval    meteorologist    botanist   + RAG Memory (ChromaDB + WaPOR context)
-        gate               │              │
-          │                └──────┬───────┘
-          │              ┌────────▼────────┐
-          │              │   financial     │  (consensus + cost function)
-          │              └────────┬────────┘
-          │              "wait"   │   "irrigate"
-          │              ───END   │
-          └──────────────►────────┘
-                    ┌────────▼────────────┐
-                    │  human_approval     │  ← HITL interrupt (both irrigate + anomaly)
-                    └────────┬────────────┘
-                    ┌────────▼────────────┐
-                    │      actuator       │  ← MCP irrigate_valve / emergency_stop tool
-                    └────────┬────────────┘
-                             ▼
-                    ┌─────────────────────┐
-                    │ SQLite Persistence │  ← Valve commands & alerts survive restarts
-                    └─────────────────────┘
+                       ┌─────────────────────────┐
+                       │   IoT Sensors / Meteo   │  Current Temp, Soil Moisture, Salinity,
+                       │   Open-Meteo FAO ET₀    │  3-Day Precipitation Forecast, WaPOR Index
+                       └────────────┬────────────┘
+                                    │
+                       ┌────────────▼────────────┐
+                       │   data_aggregation      │
+                       └────────────┬────────────┘
+                                    │
+                       ┌────────────▼────────────┐
+                       │   anomaly_check_node    │  Deterministic safety gate:
+                       └────────────┬────────────┘  Heat >45°C, Moisture >92% or <1%, Salinity >8
+                                    │
+                  ┌─────────────────┴─────────────────┐
+     [Critical Anomaly]                    [Normal Conditions]
+                  │                                   │
+                  ▼                          ┌────────┴────────┐
+         human_approval_gate                 ▼                 ▼
+          (Emergency Review)            meteorologist       botanist  (+ ChromaDB RAG Memory)
+                  │                          │                 │
+                  │                          └────────┬────────┘
+                  │                                   ▼
+                  │                           financial_director
+                  │                           (Consensus + Cost Matrix)
+                  │                                   │
+                  │                         "wait" ───┴─── "irrigate"
+                  │                           │               │
+                  │                          END              ▼
+                  └───────────────────────────────────► human_approval_gate
+                                                              │
+                                                        [Approved]
+                                                              ▼
+                                                        actuator_node
+                                                              │
+                                                              ▼
+                                                     FastMCP Hardware Tool
+                                                              │
+                                                              ▼
+                                                     SQLite Persistence
+                                                     (Survives reboots)
 ```
 
----
+### Execution Lifecycle
 
-## 🛠️ Tech Stack
-
-| Layer | Technologies |
-|-------|-------------|
-| **Backend** | FastAPI, LangGraph 1.2, LangChain, SQLModel/SQLite, ChromaDB |
-| **LLM Inference** | Groq (`qwen/qwen3.8-27b`) with structured output / Google Gemini 2.5 Flash |
-| **Migrations** | Alembic (batch mode for SQLite) |
-| **Frontend** | React 19, Vite, TypeScript, Zustand, React Router 7, TailwindCSS v4, Recharts, Lucide Icons |
-| **Observability** | Prometheus client (`/metrics`), OpenTelemetry SDK, LangSmith diagnostics |
-| **Automation** | APScheduler (AsyncIOScheduler) |
-| **Hardware** | FastMCP server (`irrigate_valve`, `emergency_stop`, `get_valve_status`, `list_recent_valves`) |
-| **Satellite Data** | Open-Meteo FAO ET₀ (Penman-Monteith) — WaPOR-equivalent water productivity index |
-| **DevOps & QA** | GitHub Actions CI/CD, Docker Compose, Pytest, Pytest-Cov (>=70% gate), Pydantic-Settings |
+1. **Telemetry Ingestion & Satellite Indexing**: Fetches hyper-local meteorological forecasts and computes FAO-56 Penman-Monteith reference evapotranspiration ($ET_0$), providing a direct satellite proxy for regional water productivity.
+2. **Deterministic Safety Filter**: Before any LLM inference occurs, `anomaly_check_node` verifies telemetry against physical thresholds. Critical sensor failure, flooding, or heatwaves route straight to manual review, preventing costly API usage and eliminating hallucination risks during physical emergencies.
+3. **Concurrent Swarm Fan-Out**: The Meteorologist and Botanist agents execute concurrently in LangGraph:
+   - **Meteorologist**: Analyzes atmospheric drying potential and 72-hour rain probability.
+   - **Botanist**: Retrieves historical crop analogues from ChromaDB vector memory, assesses root-zone moisture deficit, and calculates salinity stress.
+4. **Economic Synthesis**: The Financial Director balances water cost (DZD/L) against estimated crop value at risk (DZD/m²) to determine the minimum effective irrigation volume.
+5. **Human-in-the-Loop (HITL) Checkpoint**: If irrigation or anomaly handling is recommended, LangGraph halts execution at an interrupt breakpoint and stores state in SQLite until authenticated human approval is received.
+6. **Physical Actuation via MCP**: Upon operator sign-off, the actuator dispatches commands to the FastMCP hardware bridge. Commands, timestamps, and valve telemetry are persisted to SQLite.
 
 ---
 
-## 📂 Project Structure
+## Technical Design Decisions
+
+### LangGraph Stateful Durable Execution
+Standard LLM agent frameworks lack state serialization across disconnected HTTP requests. LangGraph provides directed acyclic graph (DAG) routing with durable SQLite checkpointers, allowing execution to pause indefinitely at a human approval gate and resume without context loss.
+
+### Model Context Protocol (MCP) Hardware Layer
+Rather than tightly coupling proprietary PLC or microcontroller code to the AI backend, actuation is exposed as an MCP server (`mcp_server.py`). Any MCP-compatible agent or orchestrator can inspect valve health, issue flow commands, or trigger emergency halts through standardized protocol primitives.
+
+### Pre-Inference Deterministic Anomaly Gate
+Running LLM inference during a hardware emergency (e.g., sensor short-circuit or irrigation pipe rupture) introduces latency and risks hallucinated approvals. Deterministic validation stops catastrophic hardware actions instantly at zero API cost.
+
+### FAO-56 Penman-Monteith Evapotranspiration
+Instead of hardcoding crop water requirements, the pipeline integrates live $ET_0$ calculations based on the FAO-56 Penman-Monteith equation via Open-Meteo. This replicates the scientific foundation of the FAO WaPOR platform without requiring external proprietary API keys.
+
+---
+
+## Project Structure
 
 ```
 agri-agent/
-├── .github/workflows/       # GitHub Actions CI/CD pipeline
-├── alembic/                 # Versioned database migration scripts
-├── backend/                 # Enterprise FastAPI backend & multi-agent swarm
-│   ├── alerting.py          # Multi-channel notification engine (email, webhook, DB)
-│   ├── api.py               # FastAPI router, lifespan & API endpoints (/api/v1/*)
-│   ├── config.py            # Typed settings via pydantic-settings
-│   ├── database.py          # SQLModel models & CRUD persistence
-│   ├── graph.py             # LangGraph stateful swarm workflow
-│   ├── main.py              # CLI entrypoint
-│   ├── mcp_server.py        # FastMCP hardware actuation server
-│   ├── memory.py            # ChromaDB vector RAG memory
-│   ├── nodes.py             # Swarm agent nodes (Meteorologist, Botanist, Financial)
-│   ├── observability.py     # Prometheus metrics & OpenTelemetry tracing
-│   ├── scheduler.py         # APScheduler periodic farm surveillance
-│   ├── security.py          # OAuth2 JWT & role-based access control (RBAC)
-│   └── state.py             # LangGraph FarmState typed dictionary
-├── agri-dashboard/          # Modern React 19 + TypeScript Frontend
+├── .github/
+│   └── workflows/
+│       └── ci.yml             # GitHub Actions CI/CD (lint, test, build, audit)
+├── alembic/                   # Database version migration environment
+├── alembic.ini                # Alembic configuration (SQLite batch mode)
+│
+├── backend/                   # Core Python application package
+│   ├── __init__.py
+│   ├── alerting.py            # Alert delivery engine (DB, Webhook, SMTP)
+│   ├── api.py                 # FastAPI application, lifespan & /api/v1 routes
+│   ├── config.py              # Centralized pydantic-settings configuration
+│   ├── database.py            # SQLModel schema definitions and CRUD layer
+│   ├── graph.py               # LangGraph state machine and DAG compilation
+│   ├── main.py                # Standalone CLI entrypoint
+│   ├── mcp_server.py          # FastMCP hardware actuation server
+│   ├── memory.py              # ChromaDB vector store with crop metadata filters
+│   ├── nodes.py               # Swarm agent logic & structured output schemas
+│   ├── observability.py       # Prometheus metrics & OpenTelemetry SDK setup
+│   ├── scheduler.py           # APScheduler background surveillance daemon
+│   ├── security.py            # OAuth2 password hashing and JWT access controls
+│   └── state.py               # TypedDict state contracts across graph nodes
+│
+├── agri-dashboard/            # React 19 + TypeScript frontend application
 │   ├── src/
-│   │   ├── api/             # Typed API client with JWT bearer interceptors
-│   │   ├── components/      # UI components (Header, FarmConfig, Timeline, etc.)
-│   │   ├── pages/           # Dedicated pages (Login, Dashboard, Analytics, Farms)
-│   │   ├── store/           # Zustand state management (authStore, farmStore)
-│   │   └── types/           # TypeScript interfaces & types
-├── scripts/                 # Utility & manual verification scripts
-├── tests/                   # Pytest test suite (77 tests, >=70% coverage gate)
-├── docker-compose.yml       # Production multi-container orchestration
-├── Dockerfile.backend       # Optimized Python backend container
-├── Dockerfile.frontend      # Multi-stage Node.js build with Nginx SPA routing
-├── pyproject.toml           # Tool configs (Ruff, Mypy, Pytest, Coverage)
-└── requirements.txt         # Pinned Python dependencies
+│   │   ├── api/               # API client with automatic JWT token injection
+│   │   ├── components/        # Reusable UI components (Header, Gate, Timeline)
+│   │   ├── pages/             # Route views (Login, Dashboard, Analytics, Farms)
+│   │   ├── store/             # Zustand global state (AuthStore, FarmStore)
+│   │   └── types/             # Frontend TypeScript interfaces
+│   ├── package.json
+│   └── vite.config.ts         # Vite server proxy to backend port 8000
+│
+├── scripts/                   # Verification and maintenance utilities
+├── tests/                     # Pytest suite (77 tests, >=70% coverage gate)
+│
+├── docker-compose.yml         # Container composition manifest
+├── Dockerfile.backend         # Python backend container build
+├── Dockerfile.frontend        # Frontend build with Nginx SPA routing
+├── pyproject.toml             # Python tooling (Ruff, Mypy, Pytest, Coverage)
+├── requirements.txt           # Pinned application dependencies
+├── .env.example               # Environment variable reference
+└── .gitignore                 # Exclusion list for credentials, DBs, and artifacts
 ```
 
 ---
 
-## 🚀 Quick Start
+## Technology Stack
 
-### 1. Configure Environment
+| Domain | Component | Technology |
+|:---|:---|:---|
+| **Backend Framework** | Web API | FastAPI 0.136, Uvicorn (ASGI) |
+| **Agent Orchestration** | Graph / Swarm | LangGraph 1.2, LangChain Core |
+| **LLM Inference** | Structured Extraction | Groq (`qwen/qwen3.8-27b`) / Google Gemini 2.5 Flash |
+| **Database & ORM** | Data Persistence | SQLModel 0.0.38, SQLite, aiosqlite |
+| **Schema Migrations** | Version Control | Alembic (Batch Mode) |
+| **Vector Memory** | Context Retrieval | ChromaDB 1.5, Sentence-Transformers (`all-MiniLM-L6-v2`) |
+| **Hardware Standard** | Physical Actuation | FastMCP 2.0 (Model Context Protocol) |
+| **Background Tasks** | Scheduled Monitoring | APScheduler 3.10 (`AsyncIOScheduler`) |
+| **Observability** | Metrics & Tracing | Prometheus Client, OpenTelemetry SDK, LangSmith |
+| **Frontend Application** | User Interface | React 19, TypeScript, TailwindCSS v4, Recharts |
+| **State Management** | Client Stores | Zustand 5 |
+| **Routing** | Client Routing | React Router 7 |
+| **DevOps & QA** | Tooling & CI/CD | Docker, Docker Compose, GitHub Actions, Pytest, Ruff, Mypy |
 
-Copy `.env.example` to `.env`:
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.11+
+- Node.js 20+ and npm
+- (Optional) Docker and Docker Compose
+
+### 1. Environment Configuration
+
+Copy the sample environment file and configure credentials:
+
 ```bash
 cp .env.example .env
 ```
 
-Key environment variables:
-```env
+Primary variables:
+
+```ini
+# LLM Provider Configuration
 LLM_PROVIDER=groq
-GROQ_API_KEY=your_free_groq_api_key
+GROQ_API_KEY=your_groq_api_key
 GROQ_MODEL=qwen/qwen3.8-27b
-GOOGLE_API_KEY=your_gemini_api_key_here
+
+# Vector Memory & Fallback Embeddings
+GOOGLE_API_KEY=your_google_ai_key
+
+# Authentication Security
 JWT_SECRET_KEY=generate_a_random_32_byte_hex_key
-ADMIN_PASSWORD=your_secure_password
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# Default Credentials (bootstrap)
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=changeme
+VIEWER_USERNAME=viewer
+VIEWER_PASSWORD=viewer123
 ```
 
-### 2. Run Database Migrations
+### 2. Database Migrations
 
-Apply the versioned Alembic migrations:
+Apply versioned Alembic migrations to set up SQLite schemas:
+
 ```bash
 alembic upgrade head
 ```
 
-### 3. Run Locally (Dev Mode)
+### 3. Local Development
 
-**Terminal 1 — Backend:**
+**Backend API Server:**
 ```bash
 pip install -r requirements.txt
 uvicorn api:app --app-dir backend --reload --port 8000
 ```
+- API Base: `http://localhost:8000`
+- Swagger Documentation: `http://localhost:8000/docs`
+- Prometheus Metrics: `http://localhost:8000/metrics`
 
-**Terminal 2 — Frontend:**
+**Frontend Dashboard:**
 ```bash
 cd agri-dashboard
 npm install
 npm run dev
 ```
+- Web Application: `http://localhost:5173`
 
-**Default Test Credentials:**
-- **Operator / Admin**: `admin` / `changeme` (or configured `ADMIN_PASSWORD`)
-- **Viewer**: `viewer` / `viewer123`
-
-### 4. Run with Docker Compose
+### 4. Container Deployment
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
-- **Dashboard**: http://localhost:5173
-- **API Documentation**: http://localhost:8000/docs
-- **Prometheus Metrics**: http://localhost:8000/metrics
+---
+
+## API Specification
+
+All primary endpoints are versioned under `/api/v1/*` with token-based access control:
+
+| Method | Endpoint | Description | Scope |
+|:---|:---|:---|:---|
+| `POST` | `/api/v1/auth/token` | Exchange username and password for JWT access token | Public |
+| `GET` | `/health` | Health check endpoint returning version & scheduler state | Public |
+| `GET` | `/metrics` | Prometheus metrics scrape target | Public |
+| `GET` | `/api/v1/farms` | List registered farms scoped to current user | Viewer / Operator |
+| `POST` | `/api/v1/farms` | Register a new farm with coordinates and threshold configs | Operator / Admin |
+| `GET` | `/api/v1/farms/{id}` | Retrieve individual farm configuration | Viewer / Operator |
+| `PUT` | `/api/v1/farms/{id}` | Update farm boundary or sensor threshold parameters | Operator / Admin |
+| `DELETE`| `/api/v1/farms/{id}` | Remove a farm record | Admin |
+| `POST` | `/api/v1/analyze` | Initiate multi-agent analysis via Server-Sent Events (SSE) | Operator / Admin |
+| `POST` | `/api/v1/actuate` | Human approval or rejection of an irrigation recommendation | Operator / Admin |
+| `GET` | `/api/v1/history` | Audit log of past decisions, optionally filtered by `farm_id`| Viewer / Operator |
+| `GET` | `/api/v1/stats` | Aggregated efficiency KPIs and water consumption metrics | Viewer / Operator |
+| `GET` | `/api/v1/valves` | Persistent log of physical valve actuation commands | Viewer / Operator |
+| `POST` | `/api/v1/valves/emergency-stop` | Emergency halt trigger closing all field valves | Operator / Admin |
+| `GET` | `/api/v1/alerts` | Log of active and historical anomaly alerts | Viewer / Operator |
+| `POST` | `/api/v1/alerts/{id}/ack` | Acknowledge an anomaly incident | Operator / Admin |
+| `POST` | `/api/v1/scheduler/run-now` | Trigger an on-demand background farm audit | Operator / Admin |
+| `GET` | `/api/v1/observability/langsmith` | Diagnostic report on LLM tracing and cost tracking | Viewer / Operator |
+
+*(Legacy endpoints `/api/*` remain active as unadvertised aliases for backward compatibility).*
 
 ---
 
-## 📡 API Endpoints (v1)
+## Model Context Protocol (MCP) Hardware Server
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| `POST` | `/api/v1/auth/token` | OAuth2 JWT login (username/password) | Public |
-| `GET` | `/health` | Health check & system status | Public |
-| `GET` | `/metrics` | Prometheus metrics scrape endpoint | Public |
-| `GET` | `/api/v1/farms` | List authorized farms for current user | Viewer/Operator |
-| `POST` | `/api/v1/farms` | Create a new farm record | Operator/Admin |
-| `POST` | `/api/v1/analyze` | Start multi-agent analysis (SSE stream) | Operator/Admin |
-| `POST` | `/api/v1/actuate` | Approve/reject irrigation or resolve anomaly | Operator/Admin |
-| `GET` | `/api/v1/history` | Multi-tenant decision audit trail | Viewer/Operator |
-| `GET` | `/api/v1/stats` | KPI aggregate statistics | Viewer/Operator |
-| `GET` | `/api/v1/valves` | Persistent MCP valve actuation log | Viewer/Operator |
-| `POST` | `/api/v1/valves/emergency-stop` | Emergency stop all valves | Operator/Admin |
-| `GET` | `/api/v1/alerts` | Critical anomaly & agronomic alert logs | Viewer/Operator |
-| `POST` | `/api/v1/alerts/{id}/ack` | Acknowledge an alert | Operator/Admin |
-| `POST` | `/api/v1/scheduler/run-now` | Trigger on-demand background farm scan | Operator/Admin |
-| `GET` | `/api/v1/observability/langsmith` | LangSmith LLM cost tracking status | Operator/Admin |
+The FastMCP hardware server (`backend/mcp_server.py`) operates as a protocol-compliant tool layer interfacing with physical irrigation hardware:
 
-*(Legacy `/api/*` endpoints are preserved for full backward compatibility).*
+| Tool Name | Parameters | Description |
+|:---|:---|:---|
+| `irrigate_valve` | `volume_liters`, `crop_type`, `latitude`, `longitude`, `water_salinity`, `thread_id`, `farm_id` | Validates target location and issues open valve command; persists command record to SQLite. |
+| `get_valve_status`| `command_id` | Returns status, execution timestamp, and telemetry for a given command. |
+| `emergency_stop` | `reason`, `thread_id` | Closes all open valves and updates command records to `EMERGENCY_CLOSED`. |
+| `list_recent_valves`| `farm_id`, `limit` | Queries recent actuation history from persistent storage. |
 
 ---
 
-## 🔌 MCP Tools
+## Testing & Quality Assurance
 
-The `mcp_server.py` exposes FastMCP tools backed by persistent SQLite storage:
-
-| Tool | Description |
-|------|-------------|
-| `irrigate_valve` | Dispatch water volume to field valve; logs command to SQLite |
-| `get_valve_status` | Retrieve execution state and telemetry for a valve command |
-| `emergency_stop` | Immediately close all active valves in the system |
-| `list_recent_valves` | Query recent valve actions for a specific farm |
-
----
-
-## 💡 Key Architecture Decisions
-
-### Why LangGraph?
-LangGraph's directed acyclic graph model is the only framework that natively supports **stateful durable execution** and **interrupt-based HITL** checkpoints via SQLite persistence — essential for physical-world actuation where the graph must survive across HTTP requests.
-
-### Why MCP for Actuation?
-The Model Context Protocol (MCP) is the emerging **open standard** for agent-to-tool interfacing. Using FastMCP ensures the hardware layer is framework-agnostic and callable by any future MCP-compatible orchestrator — not locked to LangGraph or any specific LLM provider.
-
-### Why Anomaly Detection Before Agents?
-Running LLM agents during a hardware emergency (e.g., sensor failure) wastes API tokens, introduces latency, and risks a hallucinated "irrigate" decision that could destroy crops. The `anomaly_check_node` gate prevents this with deterministic rule-based logic at zero LLM cost.
-
-### Why FAO ET₀ Instead of Hardcoded Values?
-The WaPOR platform (Water Productivity through Open access of Remotely sensed data) is the FAO's official satellite data source for regional water productivity monitoring across Algeria and North Africa. Open-Meteo's ET₀ uses the identical FAO-56 Penman-Monteith computation — providing live, location-specific water productivity data without requiring a WaPOR API key, while preserving full scientific equivalence.
-
-### Token Economics
-- **Parallel execution** halves wall-clock latency vs. sequential agents
-- **Anomaly bypass** eliminates ~3 Gemini API calls during hardware emergencies
-- **Structured output** (`llm.with_structured_output(PydanticModel)`) eliminates JSON parsing failures and retry loops
-- **Tenacity retry** (3 attempts, exponential backoff) handles free-tier rate limits gracefully
-
----
-
-## 📸 Frontend Pages & Navigation
-
-Navigate to `http://localhost:5173`:
-- **/login**: Glassmorphic authentication with 1-click Quick Login presets (`admin` / `viewer`).
-- **/dashboard**: Farm selector, live telemetry config, animated agent swarm timeline, agent report cards, and Human-in-the-Loop approval gate.
-- **/analytics**: High-level KPIs, historical irrigation chart, outcome feedback submission, and persistent MCP valve actuation audit ledger with Emergency STOP.
-- **/farms**: Multi-farm management cards, "Add Farm" modal, and on-demand background anomaly scan trigger.
-
----
-
-## 🧪 Testing & Quality Gates
-
-The test suite enforces a strict `>= 70%` code coverage threshold:
+The test suite enforces a strict `>= 70%` code coverage floor:
 
 ```bash
-pip install -r requirements.txt
 pytest
 ```
 
-Current test suite status:
-- **77 passed** across unit, integration, security, and MCP tests
-- **70.32% overall code coverage**
-- Fully automated CI/CD pipeline in `.github/workflows/ci.yml` verifying linting, pytest, coverage gates, and frontend production builds.
+Current test suite metrics:
+- **77 automated tests** (0 failures).
+- **70.26% statement coverage** across the `backend/` package.
+- Integration tests cover OAuth2 JWT lifecycle, multi-tenant database isolation, MCP actuation persistence, anomaly trigger rules, APScheduler job runs, and Prometheus serialization.
+
+Continuous integration is handled via GitHub Actions on every push and pull request to `main` and `develop`.
 
 ---
 
-*Built with modern AI Engineering principles — LangGraph, MCP, RAG, HITL, parallel agent execution, and real satellite data. Designed for the crisis that matters: water scarcity in the agricultural heartlands of Algeria and the Mediterranean.*
+## License
+
+This project is licensed under the MIT License.
