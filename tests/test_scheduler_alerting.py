@@ -1,9 +1,11 @@
 """
 Unit and integration tests for the Alerting and APScheduler surveillance system.
 """
+
 import pytest
-from database import Farm, create_db_and_tables, create_farm, get_alert_logs
+
 from alerting import dispatch_alert
+from database import Farm, create_db_and_tables, get_alert_logs
 from scheduler import check_single_farm, run_scheduled_farm_check
 
 
@@ -30,7 +32,7 @@ class TestAlertingSystem:
         assert alert.acknowledged is False
 
         logs = get_alert_logs(farm_id=1)
-        assert any(l.id == alert.id for l in logs)
+        assert any(entry.id == alert.id for entry in logs)
 
     async def test_scheduler_farm_check_normal(self):
         farm = Farm(
@@ -57,7 +59,8 @@ class TestAlertingSystem:
         assert res["alerts_triggered"] >= 1
 
     async def test_scheduler_lifecycle_and_batch_check(self):
-        from scheduler import start_scheduler, stop_scheduler, run_scheduled_farm_check
+        from scheduler import start_scheduler, stop_scheduler
+
         start_scheduler()
         stop_scheduler()
 
@@ -65,8 +68,9 @@ class TestAlertingSystem:
         assert isinstance(results, list)
 
     async def test_dispatch_alert_email_and_webhook(self, monkeypatch):
-        from config import settings
         from alerting import _send_mock_or_smtp_email
+        from config import settings
+
         monkeypatch.setattr(settings, "alert_email_enabled", True)
         monkeypatch.setattr(settings, "alert_email_to", "farmer@test.dz")
         monkeypatch.setattr(settings, "alert_webhook_url", "http://invalid-test-webhook.local")
@@ -84,7 +88,7 @@ class TestAlertingSystem:
             name="Hot Dry Farm",
             latitude=35.69,
             longitude=-0.63,
-            moisture_threshold=50.0, # will trigger deficit if moisture < 50
+            moisture_threshold=50.0,  # will trigger deficit if moisture < 50
             water_salinity=1.0,
         )
         res = await check_single_farm(hot_dry_farm)

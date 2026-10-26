@@ -15,8 +15,9 @@ New columns added in v2.0:
   - crop_value_at_risk_dzd REAL DEFAULT 0.0
   - outcome_rating INTEGER (nullable)
 """
-import sqlite3
+
 import logging
+import sqlite3
 
 log = logging.getLogger("agri_agent.migrate")
 

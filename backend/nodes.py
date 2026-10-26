@@ -9,21 +9,25 @@ Pipeline:
                                                        └──────┬───────┘
                                                            financial → actuator
 """
+
 import json
 import logging
-from pydantic import BaseModel, Field
-from tenacity import retry, stop_after_attempt, wait_exponential, RetryError
+
 import httpx
 from langchain_google_genai import ChatGoogleGenerativeAI
+from pydantic import BaseModel, Field
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 try:
     from langchain_groq import ChatGroq
+
     _groq_available = True
 except ImportError:
     _groq_available = False
 
 from config import settings
-from state import FarmState
 from memory import search_memory
+from state import FarmState
 
 # ---------------------------------------------------------------------------
 # Logging — structured, replacing all print() statements
@@ -38,17 +42,18 @@ log = logging.getLogger("agri_agent")
 # ---------------------------------------------------------------------------
 # Financial Model Constants  (move to config.py if per-farm customisation needed)
 # ---------------------------------------------------------------------------
-# Fraction of soil volume (m² × depth proxy) that holds water — agronomy approximation
-# for a 15 cm effective root-zone depth: 1 m² × 0.15 m = 0.15 m³/m²
-WATER_FRACTION_PER_SQM = 0.15           # m³ of water per m² of farm area per % moisture deficit
+# Fraction of soil volume (m² x depth proxy) that holds water - agronomy approximation
+# for a 15 cm effective root-zone depth: 1 m² x 0.15 m = 0.15 m³/m²
+WATER_FRACTION_PER_SQM = 0.15  # m³ of water per m² of farm area per % moisture deficit
 
 # Algerian water tariff proxy — residential/agricultural water in DZD per litre
 # Source: ANBT (Agence Nationale des Barrages et Transferts) 2024 tariff estimates
-WATER_COST_DZD_PER_LITRE = 0.045       # DZD / litre
+WATER_COST_DZD_PER_LITRE = 0.045  # DZD / litre
 
 # Baseline crop market value proxy — Algerian wheat at ~2.5 DZD/m² farm area
 # Source: MADR (Ministère de l'Agriculture et du Développement Rural) 2023 wheat price reports
-CROP_BASELINE_DZD_PER_SQM = 2.5        # DZD / m²
+CROP_BASELINE_DZD_PER_SQM = 2.5  # DZD / m²
+
 
 # ---------------------------------------------------------------------------
 # LLM factory — pick Groq or Gemini based on config
@@ -59,13 +64,10 @@ def _build_llm():
 
     if provider == "groq":
         if not _groq_available:
-            raise RuntimeError(
-                "langchain-groq is not installed. Run: pip install langchain-groq"
-            )
+            raise RuntimeError("langchain-groq is not installed. Run: pip install langchain-groq")
         if not settings.groq_api_key:
             raise RuntimeError(
-                "GROQ_API_KEY is not set in .env. "
-                "Get a free key at https://console.groq.com"
+                "GROQ_API_KEY is not set in .env. Get a free key at https://console.groq.com"
             )
         log.info("LLM backend: Groq (%s)", settings.groq_model)
         return ChatGroq(
@@ -105,7 +107,6 @@ async def data_aggregation_node(state: FarmState) -> dict:
     lon = state.get("longitude", settings.default_longitude)
 
     async with httpx.AsyncClient(timeout=15.0) as client:
-
         # --- 1. Current weather + soil moisture ---
         log.info("Fetching current weather from Open-Meteo (lat=%.4f, lon=%.4f)", lat, lon)
         weather_url = (
@@ -150,21 +151,21 @@ async def data_aggregation_node(state: FarmState) -> dict:
     # Normalize ET₀ → [0.1, 1.0] satellite water productivity index
     # Low ET₀ (1 mm/day)  → WP = 1.0  (cool, low evaporation — highly efficient irrigation)
     # High ET₀ (10 mm/day) → WP = 0.1 (hot, high evaporation — water lost quickly)
-    satellite_water_productivity = round(
-        max(0.1, min(1.0, 1.0 - (et0_today_mm - 1.0) / 9.0)), 3
-    )
+    satellite_water_productivity = round(max(0.1, min(1.0, 1.0 - (et0_today_mm - 1.0) / 9.0)), 3)
 
     p0 = precip[0] if len(precip) > 0 else 0
     p1 = precip[1] if len(precip) > 1 else 0
     p2 = precip[2] if len(precip) > 2 else 0
-    weather_forecast = (
-        f"Precipitation Forecast — Today: {p0}mm | Tomorrow: {p1}mm | Day 3: {p2}mm"
-    )
+    weather_forecast = f"Precipitation Forecast — Today: {p0}mm | Tomorrow: {p1}mm | Day 3: {p2}mm"
 
     log.info(
         "Data aggregation complete | temp=%.1f°C | moisture=%.2f%% | "
         "ET₀=%.2fmm/day | sat_productivity=%.3f | forecast=%s",
-        real_temp, current_moisture, et0_today_mm, satellite_water_productivity, weather_forecast,
+        real_temp,
+        current_moisture,
+        et0_today_mm,
+        satellite_water_productivity,
+        weather_forecast,
     )
 
     return {
@@ -174,7 +175,9 @@ async def data_aggregation_node(state: FarmState) -> dict:
         "weather_forecast": weather_forecast,
         # Pass-through user-provided fields
         "water_salinity": state.get("water_salinity", 1.2),
-        "plant_growth_stage": state.get("plant_growth_stage", "Vegetative Stage (High Water Demand)"),
+        "plant_growth_stage": state.get(
+            "plant_growth_stage", "Vegetative Stage (High Water Demand)"
+        ),
         "crop_type": state.get("crop_type", "Wheat"),
         "human_approved": None,
     }
@@ -202,7 +205,7 @@ async def anomaly_check_node(state: FarmState) -> dict:
     """
     log.info("Entering ANOMALY CHECK node")
 
-    temp     = state.get("temperature", 25.0)
+    temp = state.get("temperature", 25.0)
     moisture = state.get("soil_moisture", 20.0)
     salinity = state.get("water_salinity", 1.2)
 
@@ -285,7 +288,7 @@ async def meteorologist_agent_node(state: FarmState) -> dict:
     prompt = f"""You are an expert agricultural meteorologist.
 
 Forecast Data:
-{state.get('weather_forecast')}
+{state.get("weather_forecast")}
 
 Task:
 1. Analyze if significant rain (>2mm) is expected in the next 48 hours.
@@ -324,7 +327,11 @@ async def botanist_agent_node(state: FarmState) -> dict:
     log.info("Querying RAG memory: %s", query)
     try:
         past_memories = search_memory(query, k=3, crop_type=state.get("crop_type"))
-        memory_context = "\n".join(f"- {m}" for m in past_memories) if past_memories else "No relevant past data available yet."
+        memory_context = (
+            "\n".join(f"- {m}" for m in past_memories)
+            if past_memories
+            else "No relevant past data available yet."
+        )
     except Exception as e:
         log.warning("RAG memory retrieval failed: %s", e)
         memory_context = "Memory retrieval failed. Proceeding with current data only."
@@ -336,15 +343,17 @@ async def botanist_agent_node(state: FarmState) -> dict:
     elif swp > 0.4:
         swp_label = "Moderate efficiency"
     else:
-        swp_label = "Low efficiency (high evaporation stress — irrigated water will be lost quickly)"
+        swp_label = (
+            "Low efficiency (high evaporation stress — irrigated water will be lost quickly)"
+        )
 
     prompt = f"""You are an expert plant biologist specializing in precision agriculture.
 
 Crop Profile:
-- Crop: {state.get('crop_type')} at {state.get('plant_growth_stage')}
-- Temperature: {state.get('temperature')}°C
-- Soil Moisture: {state.get('soil_moisture'):.1f}%
-- Water Salinity: {state.get('water_salinity')} dS/m (note: >2.0 dS/m causes significant stress for most crops)
+- Crop: {state.get("crop_type")} at {state.get("plant_growth_stage")}
+- Temperature: {state.get("temperature")}°C
+- Soil Moisture: {state.get("soil_moisture"):.1f}%
+- Water Salinity: {state.get("water_salinity")} dS/m (note: >2.0 dS/m causes significant stress for most crops)
 - Satellite Water Productivity Index: {swp:.3f} — {swp_label}
   (Derived from FAO ET₀ Penman-Monteith, equivalent to WaPOR regional water productivity data)
 
@@ -414,10 +423,10 @@ async def financial_agent_node(state: FarmState) -> dict:
 
 === AGENT REPORTS ===
 Meteorologist Report:
-{state.get('meteorologist_analysis', 'N/A')}
+{state.get("meteorologist_analysis", "N/A")}
 
 Botanist Report:
-{state.get('botanist_analysis', 'N/A')}
+{state.get("botanist_analysis", "N/A")}
 
 === FINANCIAL CALCULATIONS ===
 Farm Area: {area_sq_meters:,.0f} m²
@@ -437,7 +446,7 @@ Satellite Water Productivity Index: {swp:.3f} (1.0 = highly efficient, 0.1 = hig
 === OUTPUT REQUIRED ===
 - Final decision: 'irrigate' or 'wait'
 - Exact liters to dispatch (0 if 'wait')
-- Recommended nutrient mix (e.g. 'N:P:K 20:10:10 — standard growth formula', or specify stress recovery blend based on salinity={state.get('water_salinity')} dS/m and growth stage={state.get('plant_growth_stage')}). Use 'None' if decision is 'wait'.
+- Recommended nutrient mix (e.g. 'N:P:K 20:10:10 — standard growth formula', or specify stress recovery blend based on salinity={state.get("water_salinity")} dS/m and growth stage={state.get("plant_growth_stage")}). Use 'None' if decision is 'wait'.
 - Full financial analysis rationale
 
 Provide your complete analysis."""
@@ -446,7 +455,9 @@ Provide your complete analysis."""
     response = await structured_llm.ainvoke(prompt)
     log.info(
         "Financial Director complete | decision=%s | volume=%.0fL | cost=%.2f DZD",
-        response.decision, response.water_volume_liters, response.financial_cost_dzd,
+        response.decision,
+        response.water_volume_liters,
+        response.financial_cost_dzd,
     )
     return {
         "financial_analysis": response.financial_analysis,
@@ -474,37 +485,46 @@ async def actuator_node(state: FarmState) -> dict:
       2. Anomaly + human override     → MCP irrigate_valve tool (conservative volume)
       3. Rejected / anomaly emergency → MCP emergency_stop tool
     """
-    from mcp_server import mcp as irrigation_mcp
     from fastmcp import Client
+
+    from mcp_server import mcp as irrigation_mcp
 
     log.info(
         "Entering ACTUATOR node | human_approved=%s | decision=%s",
-        state.get("human_approved"), state.get("decision"),
+        state.get("human_approved"),
+        state.get("decision"),
     )
 
-    decision    = state.get("decision", "wait")
+    decision = state.get("decision", "wait")
     is_approved = state.get("human_approved", False)
-    thread_id   = state.get("thread_id", "pipeline")
-    crop        = state.get("crop_type", "Unknown")
-    lat         = state.get("latitude", settings.default_latitude)
-    lon         = state.get("longitude", settings.default_longitude)
-    salinity    = state.get("water_salinity", 1.2)
-    volume      = state.get("water_volume_liters", 0) or 0.0
+    thread_id = state.get("thread_id", "pipeline")
+    crop = state.get("crop_type", "Unknown")
+    lat = state.get("latitude", settings.default_latitude)
+    lon = state.get("longitude", settings.default_longitude)
+    salinity = state.get("water_salinity", 1.2)
+    volume = state.get("water_volume_liters", 0) or 0.0
 
     try:
         if decision == "anomaly" and is_approved:
             # Human overrode the anomaly — dispatch conservative irrigation volume
             async with Client(irrigation_mcp) as client:
-                result = await client.call_tool("irrigate_valve", {
-                    "crop_type": crop,
-                    "volume_liters": max(volume, 5000.0),
-                    "latitude": lat,
-                    "longitude": lon,
-                    "water_salinity": salinity,
-                    "thread_id": thread_id,
-                    "farm_id": state.get("farm_id"),
-                })
-            ack = json.loads(result.content[0].text) if result and hasattr(result, "content") and result.content else {}
+                result = await client.call_tool(
+                    "irrigate_valve",
+                    {
+                        "crop_type": crop,
+                        "volume_liters": max(volume, 5000.0),
+                        "latitude": lat,
+                        "longitude": lon,
+                        "water_salinity": salinity,
+                        "thread_id": thread_id,
+                        "farm_id": state.get("farm_id"),
+                    },
+                )
+            ack = (
+                json.loads(result.content[0].text)
+                if result and hasattr(result, "content") and result.content
+                else {}
+            )
             cmd_id = ack.get("command_id", "N/A")
             msg = (
                 f"⚠️ Anomaly Override authorized by human operator. "
@@ -516,11 +536,20 @@ async def actuator_node(state: FarmState) -> dict:
         elif decision == "anomaly" and not is_approved:
             # Human confirmed: issue emergency stop, close all valves
             async with Client(irrigation_mcp) as client:
-                result = await client.call_tool("emergency_stop", {
-                    "reason": state.get("anomaly_reason", "Critical anomaly detected by sensors"),
-                    "thread_id": thread_id,
-                })
-            ack = json.loads(result.content[0].text) if result and hasattr(result, "content") and result.content else {}
+                result = await client.call_tool(
+                    "emergency_stop",
+                    {
+                        "reason": state.get(
+                            "anomaly_reason", "Critical anomaly detected by sensors"
+                        ),
+                        "thread_id": thread_id,
+                    },
+                )
+            ack = (
+                json.loads(result.content[0].text)
+                if result and hasattr(result, "content") and result.content
+                else {}
+            )
             msg = (
                 f"🛑 Emergency Stop issued via MCP. All valves CLOSED. "
                 f"Hardware ACK: {ack.get('status', 'EXECUTED')}. "
@@ -531,16 +560,23 @@ async def actuator_node(state: FarmState) -> dict:
         elif is_approved:
             # Normal irrigation approval path
             async with Client(irrigation_mcp) as client:
-                result = await client.call_tool("irrigate_valve", {
-                    "crop_type": crop,
-                    "volume_liters": volume,
-                    "latitude": lat,
-                    "longitude": lon,
-                    "water_salinity": salinity,
-                    "thread_id": thread_id,
-                    "farm_id": state.get("farm_id"),
-                })
-            ack = json.loads(result.content[0].text) if result and hasattr(result, "content") and result.content else {}
+                result = await client.call_tool(
+                    "irrigate_valve",
+                    {
+                        "crop_type": crop,
+                        "volume_liters": volume,
+                        "latitude": lat,
+                        "longitude": lon,
+                        "water_salinity": salinity,
+                        "thread_id": thread_id,
+                        "farm_id": state.get("farm_id"),
+                    },
+                )
+            ack = (
+                json.loads(result.content[0].text)
+                if result and hasattr(result, "content") and result.content
+                else {}
+            )
             cmd_id = ack.get("command_id", "N/A")
             hw_ack = ack.get("hardware_ack", "ACK")
             msg = (

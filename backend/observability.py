@@ -7,12 +7,12 @@ Provides:
 - OpenTelemetry distributed tracing integration
 - LangSmith LLM cost and trace tracking status
 """
-import os
+
 import logging
-from typing import Optional
+import os
 
 from fastapi import FastAPI
-from prometheus_client import Counter, Gauge, Histogram, REGISTRY
+from prometheus_client import REGISTRY, Counter, Gauge
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from config import settings
@@ -23,6 +23,7 @@ log = logging.getLogger("agri_agent.observability")
 # Custom Prometheus Metrics
 # ---------------------------------------------------------------------------
 
+
 def _get_or_create_counter(name: str, doc: str, labelnames: list[str]) -> Counter:
     """Safely get or create a Prometheus counter without registration conflict."""
     try:
@@ -31,7 +32,9 @@ def _get_or_create_counter(name: str, doc: str, labelnames: list[str]) -> Counte
         return REGISTRY._names_to_collectors.get(name)  # type: ignore[return-value]
 
 
-def _get_or_create_gauge(name: str, doc: str, labelnames: list[str] = ()) -> Gauge:
+def _get_or_create_gauge(
+    name: str, doc: str, labelnames: tuple[str, ...] | list[str] = ()
+) -> Gauge:
     """Safely get or create a Prometheus gauge without registration conflict."""
     try:
         return Gauge(name, doc, labelnames)
@@ -84,8 +87,8 @@ def setup_opentelemetry(app: FastAPI) -> None:
 
     try:
         from opentelemetry import trace
-        from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.resources import Resource
+        from opentelemetry.sdk.trace import TracerProvider
 
         resource = Resource.create({"service.name": settings.otel_service_name})
         provider = TracerProvider(resource=resource)
@@ -99,6 +102,7 @@ def setup_opentelemetry(app: FastAPI) -> None:
 def get_tracer(name: str = "agri_agent"):
     """Return active OpenTelemetry tracer or no-op fallback."""
     from opentelemetry import trace
+
     return trace.get_tracer(name)
 
 
@@ -106,13 +110,16 @@ def get_tracer(name: str = "agri_agent"):
 # LangSmith Status & Diagnostics
 # ---------------------------------------------------------------------------
 
+
 def get_langsmith_status() -> dict:
     """
     Check if LangSmith LLM cost and trace tracking is actively configured.
     LangSmith traces automatically when LANGCHAIN_TRACING_V2=true and LANGCHAIN_API_KEY is present.
     """
     api_key_present = bool(os.getenv("LANGCHAIN_API_KEY") or os.getenv("LANGSMITH_API_KEY"))
-    tracing_enabled = os.getenv("LANGCHAIN_TRACING_V2", "").lower() in ("true", "1") or settings.langsmith_tracing
+    tracing_enabled = (
+        os.getenv("LANGCHAIN_TRACING_V2", "").lower() in ("true", "1") or settings.langsmith_tracing
+    )
     project = os.getenv("LANGCHAIN_PROJECT", settings.langsmith_project)
 
     return {
@@ -127,6 +134,7 @@ def get_langsmith_status() -> dict:
 # ---------------------------------------------------------------------------
 # Prometheus FastApi Instrumentator Setup
 # ---------------------------------------------------------------------------
+
 
 def setup_prometheus(app: FastAPI) -> None:
     """Mount Prometheus /metrics endpoint on FastAPI app."""

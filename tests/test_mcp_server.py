@@ -1,14 +1,12 @@
 """
 Unit and integration tests for the MCP Irrigation Actuator server and database persistence.
 """
+
 import pytest
+
 from database import (
-    ValveCommand,
     create_db_and_tables,
-    emergency_stop_all_valves,
     get_valve_command,
-    list_valve_commands,
-    save_valve_command,
 )
 from mcp_server import emergency_stop, get_valve_status, irrigate_valve, list_recent_valves
 

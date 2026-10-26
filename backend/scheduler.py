@@ -4,16 +4,15 @@ Scheduled background analysis for the Agri-Agent Swarm using APScheduler.
 Periodically monitors registered farms, queries live Open-Meteo telemetry,
 detects anomalies, and triggers proactive alerts.
 """
+
 import logging
-from typing import Optional
-from datetime import datetime, timezone
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import httpx
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from config import settings
-from database import list_farms_for_user, Farm
 from alerting import dispatch_alert
+from config import settings
+from database import Farm, list_farms_for_user
 
 log = logging.getLogger("agri_agent.scheduler")
 

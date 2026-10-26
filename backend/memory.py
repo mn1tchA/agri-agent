@@ -4,8 +4,9 @@ RAG Memory module using ChromaDB + Gemini Embeddings.
 Stores and retrieves past irrigation decisions for the Botanist Agent.
 Supports optional crop-type metadata filtering for targeted retrieval.
 """
+
 import logging
-from langchain_core.documents import Document
+
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
