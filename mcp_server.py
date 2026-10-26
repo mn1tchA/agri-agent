@@ -35,10 +35,13 @@ mcp = FastMCP(
     ),
 )
 
-# In-memory hardware state registry
-# Production replacement: integrate with real PLC/SCADA REST API or OPC-UA endpoint
-_valve_registry: dict[str, dict] = {}
-
+from database import (
+    ValveCommand,
+    emergency_stop_all_valves,
+    get_valve_command,
+    list_valve_commands,
+    save_valve_command,
+)
 
 # ---------------------------------------------------------------------------
 # Tool 1 — irrigate_valve
@@ -51,9 +54,10 @@ def irrigate_valve(
     longitude: float,
     water_salinity: float,
     thread_id: str,
+    farm_id: int | None = None,
 ) -> dict:
     """
-    Dispatch an irrigation command to the field valve controller.
+    Dispatch an irrigation command to the field valve controller and persist in DB.
 
     Args:
         crop_type: The crop being irrigated (e.g., 'Wheat', 'Tomato', 'Potato').
@@ -63,32 +67,48 @@ def irrigate_valve(
         water_salinity: Water salinity in dS/m for valve mixing calibration.
                         Values > 4.0 dS/m trigger dilution protocol.
         thread_id: Unique pipeline run identifier for audit log tracing.
+        farm_id: Optional ID of the farm owning the valve.
 
     Returns:
         Hardware acknowledgement dict with status, command_id, and UTC timestamp.
-        Example: {"status": "EXECUTED", "command_id": "CMD-A1B2C3D4-...", ...}
     """
-    timestamp = datetime.now(timezone.utc).isoformat()
-    command_id = f"CMD-{thread_id[:8].upper()}-{int(datetime.now().timestamp())}"
+    now = datetime.now(timezone.utc)
+    command_id = f"CMD-{thread_id[:8].upper()}-{int(now.timestamp())}"
+    dilution = "ACTIVE" if water_salinity > 4.0 else "INACTIVE"
 
-    record = {
+    valve_record = ValveCommand(
+        command_id=command_id,
+        thread_id=thread_id,
+        farm_id=farm_id,
+        crop_type=crop_type,
+        command="OPEN_VALVE",
+        volume_dispatched_liters=round(volume_liters, 2),
+        target_coordinates=f"({latitude:.4f}, {longitude:.4f})",
+        water_salinity_ds_m=water_salinity,
+        dilution_protocol=dilution,
+        status="EXECUTED",
+        hardware_ack="VALVE_OPENED_OK",
+        timestamp_utc=now,
+    )
+    save_valve_command(valve_record)
+
+    log.info(
+        "MCP irrigate_valve (persisted) | id=%s | %.0fL → %s | salinity=%.1f dS/m",
+        command_id, volume_liters, valve_record.target_coordinates, water_salinity,
+    )
+    return {
         "status": "EXECUTED",
         "command_id": command_id,
         "command": "OPEN_VALVE",
         "crop_type": crop_type,
         "volume_dispatched_liters": round(volume_liters, 2),
-        "target_coordinates": f"({latitude:.4f}, {longitude:.4f})",
+        "target_coordinates": valve_record.target_coordinates,
         "water_salinity_ds_m": water_salinity,
-        "dilution_protocol": "ACTIVE" if water_salinity > 4.0 else "INACTIVE",
-        "timestamp_utc": timestamp,
+        "dilution_protocol": dilution,
+        "timestamp_utc": now.isoformat(),
         "hardware_ack": "VALVE_OPENED_OK",
+        "farm_id": farm_id,
     }
-    _valve_registry[command_id] = record
-    log.info(
-        "MCP irrigate_valve | id=%s | %.0fL → %s | salinity=%.1f dS/m",
-        command_id, volume_liters, record["target_coordinates"], water_salinity,
-    )
-    return record
 
 
 # ---------------------------------------------------------------------------
@@ -97,20 +117,29 @@ def irrigate_valve(
 @mcp.tool()
 def get_valve_status(command_id: str) -> dict:
     """
-    Query the current status of a previously issued valve command.
+    Query the current status of a previously issued valve command from SQLite.
 
     Args:
         command_id: The command ID returned by irrigate_valve (e.g., 'CMD-A1B2C3D4-...').
-                    Must be an exact match — partial IDs are not accepted.
 
     Returns:
-        Current hardware status record including valve_state and query timestamp,
-        or an error dict if the command_id is not found.
+        Current hardware status record or NOT_FOUND dict.
     """
-    if command_id in _valve_registry:
+    record = get_valve_command(command_id)
+    if record:
         return {
-            **_valve_registry[command_id],
-            "valve_state": _valve_registry[command_id].get("valve_state", "OPEN"),
+            "status": record.status,
+            "command_id": record.command_id,
+            "command": record.command,
+            "crop_type": record.crop_type,
+            "volume_dispatched_liters": record.volume_dispatched_liters,
+            "target_coordinates": record.target_coordinates,
+            "water_salinity_ds_m": record.water_salinity_ds_m,
+            "dilution_protocol": record.dilution_protocol,
+            "hardware_ack": record.hardware_ack,
+            "timestamp_utc": record.timestamp_utc.isoformat(),
+            "valve_state": "OPEN" if record.status == "EXECUTED" else "CLOSED",
+            "farm_id": record.farm_id,
             "query_time_utc": datetime.now(timezone.utc).isoformat(),
         }
     return {
@@ -126,36 +155,54 @@ def get_valve_status(command_id: str) -> dict:
 @mcp.tool()
 def emergency_stop(reason: str, thread_id: str) -> dict:
     """
-    Issue an emergency stop, immediately closing all active irrigation valves.
-
-    Use this when critical anomalies are confirmed by a human operator:
-    extreme heat events, sensor failures, waterlogging, or critical salinity spikes.
+    Issue an emergency stop, immediately closing all active irrigation valves in DB.
 
     Args:
-        reason: Human-readable explanation for the emergency stop (logged for compliance).
-        thread_id: Pipeline run ID triggering the stop (for audit correlation).
+        reason: Human-readable explanation for compliance logging.
+        thread_id: Pipeline run ID triggering the stop.
 
     Returns:
-        Emergency stop acknowledgement including list of affected valve command IDs.
+        Emergency stop acknowledgement dict.
     """
     timestamp = datetime.now(timezone.utc).isoformat()
-    affected = list(_valve_registry.keys())
-    for cmd_id in affected:
-        _valve_registry[cmd_id]["valve_state"] = "EMERGENCY_CLOSED"
+    affected_count = emergency_stop_all_valves()
+    recent = list_valve_commands(limit=20)
+    affected_ids = [v.command_id for v in recent if v.status == "STOPPED"]
 
     log.warning(
         "MCP EMERGENCY_STOP | thread=%s | reason=%s | valves_closed=%d",
-        thread_id[:8], reason, len(affected),
+        thread_id[:8], reason, affected_count,
     )
     return {
         "status": "EMERGENCY_STOP_EXECUTED",
         "all_valves": "CLOSED",
-        "valves_affected": affected,
-        "valves_closed_count": len(affected),
+        "valves_affected": affected_ids,
+        "valves_closed_count": affected_count,
         "reason": reason,
         "thread_id": thread_id,
         "timestamp_utc": timestamp,
     }
+
+
+# ---------------------------------------------------------------------------
+# Tool 4 — list_recent_valves
+# ---------------------------------------------------------------------------
+@mcp.tool()
+def list_recent_valves(farm_id: int | None = None, limit: int = 20) -> list[dict]:
+    """List recent valve commands persisted in the SQLite database."""
+    valves = list_valve_commands(farm_id=farm_id, limit=limit)
+    return [
+        {
+            "command_id": v.command_id,
+            "crop_type": v.crop_type,
+            "volume_dispatched_liters": v.volume_dispatched_liters,
+            "status": v.status,
+            "target_coordinates": v.target_coordinates,
+            "timestamp_utc": v.timestamp_utc.isoformat(),
+            "farm_id": v.farm_id,
+        }
+        for v in valves
+    ]
 
 
 # ---------------------------------------------------------------------------

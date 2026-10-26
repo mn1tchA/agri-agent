@@ -1,0 +1,206 @@
+name: CI — Lint, Test, Build
+
+on:
+  push:
+    branches: [main, develop, "feature/**", "fix/**"]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true   # Cancel in-progress runs for the same branch on new pushes
+
+# ---------------------------------------------------------------------------
+# Environment variables available to all jobs
+# ---------------------------------------------------------------------------
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20"
+
+jobs:
+  # ===========================================================================
+  # JOB 1 — Backend: Lint
+  # ===========================================================================
+  backend-lint:
+    name: "Backend — Lint (ruff)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install ruff
+        run: pip install ruff>=0.8.0
+
+      - name: Run ruff linter
+        run: ruff check . --output-format=github
+
+      - name: Run ruff formatter check
+        run: ruff format . --check
+
+  # ===========================================================================
+  # JOB 2 — Backend: Type Check
+  # ===========================================================================
+  backend-typecheck:
+    name: "Backend — Type Check (mypy)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run mypy
+        run: mypy . --ignore-missing-imports
+
+  # ===========================================================================
+  # JOB 3 — Backend: Tests with Coverage
+  # ===========================================================================
+  backend-test:
+    name: "Backend — Tests (pytest + coverage)"
+    runs-on: ubuntu-latest
+    env:
+      # Provide dummy values so settings load cleanly in test environment
+      GROQ_API_KEY: "test-key"
+      GOOGLE_API_KEY: "test-key"
+      JWT_SECRET_KEY: "ci-test-secret-not-for-production-use"
+      ADMIN_PASSWORD: "ci-admin-pass"
+      VIEWER_PASSWORD: "ci-viewer-pass"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests with coverage
+        run: pytest tests/ --cov=. --cov-report=xml --cov-report=term-missing --cov-fail-under=70 -v
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          file: coverage.xml
+          flags: backend
+          fail_ci_if_error: false   # Don't block CI on Codecov upload failures
+
+  # ===========================================================================
+  # JOB 4 — Security: Dependency Audit
+  # ===========================================================================
+  backend-security:
+    name: "Backend — Security (pip-audit)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install pip-audit
+        run: pip install pip-audit>=2.7.0
+
+      - name: Audit dependencies for CVEs
+        run: pip-audit -r requirements.txt --output text
+        continue-on-error: true   # Report but don't block; promote to failure after initial cleanup
+
+  # ===========================================================================
+  # JOB 5 — Frontend: Lint + Type Check + Build
+  # ===========================================================================
+  frontend:
+    name: "Frontend — Lint, Type-check, Build"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agri-dashboard
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: agri-dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npx eslint src --ext .ts,.tsx --max-warnings 0
+
+      - name: TypeScript type-check
+        run: npx tsc --noEmit
+
+      - name: Build production bundle
+        run: npm run build
+        env:
+          VITE_API_BASE: "http://localhost:8000"   # Placeholder; real URL set via Docker/env
+
+  # ===========================================================================
+  # JOB 6 — Docker: Build both images
+  # ===========================================================================
+  docker-build:
+    name: "Docker — Build Images"
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend]   # Only build if tests pass
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.backend
+          push: false   # Promote to push: true when registry is configured
+          tags: agri-agent-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.frontend
+          push: false
+          tags: agri-agent-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ===========================================================================
+  # JOB 7 — Summary badge (runs last)
+  # ===========================================================================
+  ci-success:
+    name: "CI — All Checks Passed"
+    runs-on: ubuntu-latest
+    needs: [backend-lint, backend-typecheck, backend-test, backend-security, frontend, docker-build]
+    if: always()
+    steps:
+      - name: Check all jobs succeeded
+        run: |
+          if [[ "${{ needs.backend-lint.result }}" != "success" ||
+                "${{ needs.backend-typecheck.result }}" != "success" ||
+                "${{ needs.backend-test.result }}" != "success" ||
+                "${{ needs.frontend.result }}" != "success" ||
+                "${{ needs.docker-build.result }}" != "success" ]]; then
+            echo "❌ One or more CI jobs failed."
+            exit 1
+          fi
+          echo "✅ All CI checks passed!"

@@ -14,7 +14,7 @@ import type { HistoryLog, AggregateStats } from '../types';
 import { fetchHistory, fetchStats } from '../hooks/useAnalysis';
 
 interface AnalyticsDashboardProps {
-  onFeedback: (logId: number, rating: number) => void;
+  onFeedback?: (logId: number, rating: number) => void;
 }
 
 const PIE_COLORS = ['#10b981', '#64748b'];
@@ -297,7 +297,7 @@ export function AnalyticsDashboard({ onFeedback }: AnalyticsDashboardProps) {
                     <div className="flex items-center gap-3 pt-2 border-t border-white/[0.04]">
                       <span className="text-[11px] text-slate-600">Was this a good decision?</span>
                       <button
-                        onClick={() => onFeedback(log.id, 5)}
+                        onClick={() => onFeedback?.(log.id, 5)}
                         className={`chip text-[10px] border transition-all cursor-pointer ${
                           log.outcome_rating === 5
                             ? 'bg-emerald-500 text-white border-emerald-500'
@@ -307,7 +307,7 @@ export function AnalyticsDashboard({ onFeedback }: AnalyticsDashboardProps) {
                         <ThumbsUp className="w-3 h-3" /> Yes
                       </button>
                       <button
-                        onClick={() => onFeedback(log.id, 1)}
+                        onClick={() => onFeedback?.(log.id, 1)}
                         className={`chip text-[10px] border transition-all cursor-pointer ${
                           log.outcome_rating === 1
                             ? 'bg-red-500 text-white border-red-500'

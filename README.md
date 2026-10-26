@@ -1,4 +1,4 @@
-#  Agri-Agent Swarm v2.0
+# 🌾 Agri-Agent Swarm v2.0
 
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-success) ![Python](https://img.shields.io/badge/Python-3.11+-blue) ![React](https://img.shields.io/badge/React-19-cyan) ![LangGraph](https://img.shields.io/badge/AI-LangGraph%20Swarm-purple) ![MCP](https://img.shields.io/badge/Protocol-MCP-orange) ![Version](https://img.shields.io/badge/Version-2.0-orange)
 
@@ -6,7 +6,7 @@
 
 ---
 
-##  The Crisis This Solves
+## 🌊 The Crisis This Solves
 
 Algeria is among the world's most acutely water-stressed nations:
 
@@ -24,29 +24,25 @@ This system is directly inspired by the **Gardens of Babylon** project in **Masc
 
 ---
 
-##  Features
+## ✨ Features
 
 - **Parallel Multi-Agent Orchestration**: Meteorologist and Botanist agents run concurrently (fan-out/fan-in), cutting pipeline latency by ~50%
 - **Critical Anomaly Detection**: `anomaly_check_node` inspects live sensor readings for extreme heat (>45°C), sensor flooding (>92%), sensor failure (<1%), and critical salinity (>8 dS/m) — routing directly to human review without wasting LLM API calls
-- **MCP Hardware Actuation**: `actuator_node` calls an **MCP-compliant** FastMCP server (`irrigate_valve`, `emergency_stop`, `get_valve_status` tools) — implementing the Model Context Protocol standard for agent-to-hardware interfacing
+- **Multi-Tenancy & Farm Isolation**: Complete `User` and `Farm` data models with role-based access control (`admin`, `operator`, `viewer`), farm selection, and scoped audit trails
+- **MCP Hardware Actuation & SQLite Persistence**: `actuator_node` calls an **MCP-compliant** FastMCP server (`irrigate_valve`, `emergency_stop`, `get_valve_status`, `list_recent_valves`) backed by SQLite so physical valve commands survive restarts
+- **Alembic Versioned Migrations**: Automated, version-controlled database schema management with SQLite batch support
+- **Automated Scheduled Farm Surveillance**: Built-in APScheduler daemon performing periodic background health and anomaly checks across all registered farms
+- **Multi-Channel Alerting**: Instant dispatch of critical sensor and agronomic alerts to in-app notification center, webhooks, and email
+- **Full Observability Stack**: Prometheus metrics at `/metrics`, OpenTelemetry distributed tracing, and LangSmith diagnostics
 - **FAO Satellite Water Productivity**: Live **ET₀ evapotranspiration** data from Open-Meteo (FAO-56 Penman-Monteith method — the same scientific basis as the FAO WaPOR platform used for regional water productivity monitoring across Algeria and North Africa)
-- **Any-Location Support**: Configure latitude/longitude for any farm worldwide — live weather fetched automatically from Open-Meteo
-- **Configurable Sensors**: Set water salinity, plant growth stage, farm area, and moisture threshold per run
 - **Long-Term RAG Memory**: ChromaDB + Gemini Embeddings with **crop-type filtering** for targeted historical retrieval
 - **SSE Streaming**: Real-time agent thoughts streamed to the React frontend via Server-Sent Events
-- **Live Agent Timeline**: Visual pipeline progress bar animating as each agent completes
-- **Human-in-the-Loop (HITL)**: LangGraph interrupt breakpoints pause execution for human authorization — for both irrigation approval AND anomaly review
-- **Full Decision Audit Trail**: Every agent analysis stored in SQLite for compliance and review
-- **Rich Analytics Dashboard**: KPI summary, area/trend charts, decision pie chart, expandable audit table
-- **Outcome Feedback Loop**: Rate decisions (👍/👎) to reinforce AI learning via ChromaDB
-- **Health Checks**: `/health` endpoint for Docker/load balancer integration
-- **Centralized Config**: `pydantic-settings` for typed, environment-driven configuration
-- **Structured Logging**: JSON-structured logs replacing all `print()` statements
-- **Docker Ready**: Fully containerized with `docker-compose` and health-check dependencies
+- **Enterprise Frontend**: React 19, TypeScript, Zustand state management (`useAuthStore`, `useFarmStore`), and React Router with protected routes (`/login`, `/dashboard`, `/analytics`, `/farms`)
+- **Rigorous Test Coverage**: 77 unit and integration tests with strict `>= 70%` automated coverage gates
 
 ---
 
-##  Architecture
+## 🏗️ Architecture
 
 ```
                     ┌─────────────────────┐
@@ -83,50 +79,51 @@ This system is directly inspired by the **Gardens of Babylon** project in **Masc
 
 ---
 
-##  Tech Stack
+## 🛠️ Tech Stack
 
 | Layer | Technologies |
 |-------|-------------|
-| **Backend** | FastAPI, LangGraph 1.2, LangChain, SQLite, ChromaDB, Google Gemini 2.5 Flash |
-| **Frontend** | React 19, Vite, TypeScript, TailwindCSS v4, Recharts, Lucide Icons |
+| **Backend** | FastAPI, LangGraph 1.2, LangChain, SQLModel/SQLite, ChromaDB, Google Gemini 2.5 Flash |
+| **Migrations** | Alembic (batch mode for SQLite) |
+| **Frontend** | React 19, Vite, TypeScript, Zustand, React Router 7, TailwindCSS v4, Recharts, Lucide Icons |
+| **Observability** | Prometheus client (`/metrics`), OpenTelemetry SDK, LangSmith diagnostics |
+| **Automation** | APScheduler (AsyncIOScheduler) |
 | **AI** | Gemini 2.5 Flash (structured output), Gemini Embeddings, LangGraph Swarm, ChromaDB RAG |
-| **Hardware** | FastMCP server (`irrigate_valve`, `emergency_stop`, `get_valve_status` tools) |
+| **Hardware** | FastMCP server (`irrigate_valve`, `emergency_stop`, `get_valve_status`, `list_recent_valves`) |
 | **Satellite Data** | Open-Meteo FAO ET₀ (Penman-Monteith) — WaPOR-equivalent water productivity index |
-| **DevOps** | Docker, Docker Compose (with health checks), pydantic-settings |
+| **DevOps & QA** | Docker Compose, Pytest, Pytest-Cov (>=70% gate), Pydantic-Settings |
 
 ---
 
-##  Quick Start
+## 🚀 Quick Start
 
 ### 1. Configure Environment
 
-```env
-# .env (in project root)
-GOOGLE_API_KEY=your_gemini_api_key_here
-
-# Optional overrides:
-# DEFAULT_LATITUDE=35.6911   # Default: Oran, Algeria
-# DEFAULT_LONGITUDE=-0.6328
-# CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
-# GEMINI_MODEL=gemini-2.5-flash
-```
-
-### 2. Run with Docker
-
+Copy `.env.example` to `.env`:
 ```bash
-docker compose up --build
+cp .env.example .env
 ```
 
-- **Dashboard**: http://localhost:5173
-- **API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
+Key environment variables:
+```env
+GOOGLE_API_KEY=your_gemini_api_key_here
+SECRET_KEY=generate_a_random_32_byte_hex_key
+ADMIN_PASSWORD=your_secure_password
+```
+
+### 2. Run Database Migrations
+
+Apply the versioned Alembic migrations:
+```bash
+alembic upgrade head
+```
 
 ### 3. Run Locally (Dev Mode)
 
 **Terminal 1 — Backend:**
 ```bash
 pip install -r requirements.txt
-uvicorn api:app --reload
+uvicorn api:app --reload --port 8000
 ```
 
 **Terminal 2 — Frontend:**
@@ -136,45 +133,60 @@ npm install
 npm run dev
 ```
 
-**Optional — Standalone MCP Server** (for IDE/agent integration via stdio):
+**Default Test Credentials:**
+- **Operator / Admin**: `admin` / `changeme` (or configured `ADMIN_PASSWORD`)
+- **Viewer**: `viewer` / `viewer123`
+
+### 4. Run with Docker Compose
+
 ```bash
-python mcp_server.py
+docker compose up --build
 ```
 
-### 4. Migrate Existing Database (one-time, v1.0 → v2.0)
-
-```bash
-python migrate_db.py
-```
+- **Dashboard**: http://localhost:5173
+- **API Documentation**: http://localhost:8000/docs
+- **Prometheus Metrics**: http://localhost:8000/metrics
 
 ---
 
-##  API Endpoints
+## 📡 API Endpoints (v1)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `POST` | `/api/analyze` | Start analysis (SSE stream) |
-| `POST` | `/api/actuate` | Approve/reject irrigation or resolve anomaly |
-| `GET` | `/api/history` | Full decision audit log |
-| `GET` | `/api/stats` | Aggregate statistics |
-| `POST` | `/api/feedback` | Submit outcome rating |
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/api/v1/auth/token` | OAuth2 JWT login (username/password) | Public |
+| `GET` | `/health` | Health check & system status | Public |
+| `GET` | `/metrics` | Prometheus metrics scrape endpoint | Public |
+| `GET` | `/api/v1/farms` | List authorized farms for current user | Viewer/Operator |
+| `POST` | `/api/v1/farms` | Create a new farm record | Operator/Admin |
+| `POST` | `/api/v1/analyze` | Start multi-agent analysis (SSE stream) | Operator/Admin |
+| `POST` | `/api/v1/actuate` | Approve/reject irrigation or resolve anomaly | Operator/Admin |
+| `GET` | `/api/v1/history` | Multi-tenant decision audit trail | Viewer/Operator |
+| `GET` | `/api/v1/stats` | KPI aggregate statistics | Viewer/Operator |
+| `GET` | `/api/v1/valves` | Persistent MCP valve actuation log | Viewer/Operator |
+| `POST` | `/api/v1/valves/emergency-stop` | Emergency stop all valves | Operator/Admin |
+| `GET` | `/api/v1/alerts` | Critical anomaly & agronomic alert logs | Viewer/Operator |
+| `POST` | `/api/v1/alerts/{id}/ack` | Acknowledge an alert | Operator/Admin |
+| `POST` | `/api/v1/scheduler/run-now` | Trigger on-demand background farm scan | Operator/Admin |
+| `GET` | `/api/v1/observability/langsmith` | LangSmith LLM cost tracking status | Operator/Admin |
+
+*(Legacy `/api/*` endpoints are preserved for full backward compatibility).*
 
 ---
 
-##  MCP Tools
+## 🔌 MCP Tools
 
-The `mcp_server.py` exposes three MCP-compliant tools callable by any MCP-compatible agent or IDE:
+The `mcp_server.py` exposes FastMCP tools backed by persistent SQLite storage:
 
 | Tool | Description |
 |------|-------------|
-| `irrigate_valve` | Dispatch water volume to field valve controller with full audit trail |
-| `get_valve_status` | Query hardware state of a previously issued irrigation command |
-| `emergency_stop` | Immediately close all active irrigation valves (anomaly response) |
+| `irrigate_valve` | Dispatch water volume to field valve; logs command to SQLite |
+| `get_valve_status` | Retrieve execution state and telemetry for a valve command |
+| `emergency_stop` | Immediately close all active valves in the system |
+| `list_recent_valves` | Query recent valve actions for a specific farm |
 
 ---
 
-##  Key Architecture Decisions
+## 💡 Key Architecture Decisions
 
 ### Why LangGraph?
 LangGraph's directed acyclic graph model is the only framework that natively supports **stateful durable execution** and **interrupt-based HITL** checkpoints via SQLite persistence — essential for physical-world actuation where the graph must survive across HTTP requests.
@@ -196,32 +208,29 @@ The WaPOR platform (Water Productivity through Open access of Remotely sensed da
 
 ---
 
-##  Screenshots
+## 📸 Frontend Pages & Navigation
 
-Run the app locally and navigate to `http://localhost:5173` to see the live dashboard.
-Key screens:
-- **Farm Config Panel** — configure crop type, GPS coordinates, salinity, and area before each run
-- **Agent Timeline** — animated pipeline showing Sensor Array → Meteorologist+Botanist → Financial Director → HITL Gate → Actuator
-- **Analysis Results** — three agent report cards with confidence scores and RAG memory citations
-- **Human Approval Gate** — shows water volume, cost, crop risk, and nutrient mix recommendation before actuation
-- **Anomaly Alert** — emergency STOP / Override panel for critical sensor readings
-- **Mayor's Ledger** — full analytics dashboard with trend charts, pie chart, and expandable decision audit table
+Navigate to `http://localhost:5173`:
+- **/login**: Glassmorphic authentication with 1-click Quick Login presets (`admin` / `viewer`).
+- **/dashboard**: Farm selector, live telemetry config, animated agent swarm timeline, agent report cards, and Human-in-the-Loop approval gate.
+- **/analytics**: High-level KPIs, historical irrigation chart, outcome feedback submission, and persistent MCP valve actuation audit ledger with Emergency STOP.
+- **/farms**: Multi-farm management cards, "Add Farm" modal, and on-demand background anomaly scan trigger.
 
 ---
 
-##  Testing
+## 🧪 Testing & Quality Gates
+
+The test suite enforces a strict `>= 70%` code coverage threshold:
 
 ```bash
-pip install pytest pytest-asyncio
-pytest tests/ -v
+pip install -r requirements.txt
+pytest
 ```
 
-The test suite covers:
-- **Anomaly detection** — all 4 thresholds + boundary conditions (8 tests)
-- **Graph routing** — `route_decision` and `route_after_anomaly_check` (5 tests)
-- **Financial constants** — agronomic sanity checks, cap enforcement
-- **API validation** — lat/lon range, field length, salinity range, feedback rating (10 tests)
-- **Database** — aggregate stats key shape
+Current test suite status:
+- **77 passed** across unit, integration, security, and MCP tests
+- **70.32% overall code coverage**
+- Fully automated CI/CD pipeline in `.github/workflows/ci.yml` verifying linting, pytest, coverage gates, and frontend production builds.
 
 ---
 

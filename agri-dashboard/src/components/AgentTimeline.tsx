@@ -102,7 +102,7 @@ export function AgentTimeline({ currentStep, loading }: AgentTimelineProps) {
 
   return (
     <div className="glass-panel px-5 pt-4 pb-5 mb-5 animate-slide-up">
-      {/* Header row */}
+      {/* Header rowS */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           {isError

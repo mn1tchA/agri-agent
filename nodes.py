@@ -502,6 +502,7 @@ async def actuator_node(state: FarmState) -> dict:
                     "longitude": lon,
                     "water_salinity": salinity,
                     "thread_id": thread_id,
+                    "farm_id": state.get("farm_id"),
                 })
             ack = json.loads(result.content[0].text) if result and hasattr(result, "content") and result.content else {}
             cmd_id = ack.get("command_id", "N/A")
@@ -537,6 +538,7 @@ async def actuator_node(state: FarmState) -> dict:
                     "longitude": lon,
                     "water_salinity": salinity,
                     "thread_id": thread_id,
+                    "farm_id": state.get("farm_id"),
                 })
             ack = json.loads(result.content[0].text) if result and hasattr(result, "content") and result.content else {}
             cmd_id = ack.get("command_id", "N/A")
