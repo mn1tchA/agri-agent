@@ -1,6 +1,6 @@
-# 🌾 Agri-Agent Swarm v2.0
+# 🌾 Agri-Agent Swarm v2.2
 
-![Status](https://img.shields.io/badge/Status-Production%20Ready-success) ![Python](https://img.shields.io/badge/Python-3.11+-blue) ![React](https://img.shields.io/badge/React-19-cyan) ![LangGraph](https://img.shields.io/badge/AI-LangGraph%20Swarm-purple) ![MCP](https://img.shields.io/badge/Protocol-MCP-orange) ![Version](https://img.shields.io/badge/Version-2.0-orange)
+![Status](https://img.shields.io/badge/Status-Production%20Ready-success) ![Python](https://img.shields.io/badge/Python-3.11+-blue) ![React](https://img.shields.io/badge/React-19-cyan) ![LangGraph](https://img.shields.io/badge/AI-LangGraph%20Swarm-purple) ![MCP](https://img.shields.io/badge/Protocol-MCP-orange) ![Version](https://img.shields.io/badge/Version-2.2-orange)
 
 **Agri-Agent Swarm** is an enterprise-grade, Multi-Agent Autonomous Agricultural system built to democratize precision agriculture in water-stressed regions. It deploys a **LangGraph Swarm** of specialized AI agents — meteorologist, botanist, financial director — orchestrated with **parallel execution**, **critical anomaly detection**, **Vector RAG Memory**, **real FAO satellite data**, and **MCP hardware actuation** to make financially optimized, physically-grounded irrigation decisions.
 
@@ -74,6 +74,10 @@ This system is directly inspired by the **Gardens of Babylon** project in **Masc
                     └────────┬────────────┘
                     ┌────────▼────────────┐
                     │      actuator       │  ← MCP irrigate_valve / emergency_stop tool
+                    └────────┬────────────┘
+                             ▼
+                    ┌─────────────────────┐
+                    │ SQLite Persistence │  ← Valve commands & alerts survive restarts
                     └─────────────────────┘
 ```
 
@@ -83,15 +87,15 @@ This system is directly inspired by the **Gardens of Babylon** project in **Masc
 
 | Layer | Technologies |
 |-------|-------------|
-| **Backend** | FastAPI, LangGraph 1.2, LangChain, SQLModel/SQLite, ChromaDB, Google Gemini 2.5 Flash |
+| **Backend** | FastAPI, LangGraph 1.2, LangChain, SQLModel/SQLite, ChromaDB |
+| **LLM Inference** | Groq (`qwen/qwen3.8-27b`) with structured output / Google Gemini 2.5 Flash |
 | **Migrations** | Alembic (batch mode for SQLite) |
 | **Frontend** | React 19, Vite, TypeScript, Zustand, React Router 7, TailwindCSS v4, Recharts, Lucide Icons |
 | **Observability** | Prometheus client (`/metrics`), OpenTelemetry SDK, LangSmith diagnostics |
 | **Automation** | APScheduler (AsyncIOScheduler) |
-| **AI** | Gemini 2.5 Flash (structured output), Gemini Embeddings, LangGraph Swarm, ChromaDB RAG |
 | **Hardware** | FastMCP server (`irrigate_valve`, `emergency_stop`, `get_valve_status`, `list_recent_valves`) |
 | **Satellite Data** | Open-Meteo FAO ET₀ (Penman-Monteith) — WaPOR-equivalent water productivity index |
-| **DevOps & QA** | Docker Compose, Pytest, Pytest-Cov (>=70% gate), Pydantic-Settings |
+| **DevOps & QA** | GitHub Actions CI/CD, Docker Compose, Pytest, Pytest-Cov (>=70% gate), Pydantic-Settings |
 
 ---
 
@@ -106,8 +110,11 @@ cp .env.example .env
 
 Key environment variables:
 ```env
+LLM_PROVIDER=groq
+GROQ_API_KEY=your_free_groq_api_key
+GROQ_MODEL=qwen/qwen3.8-27b
 GOOGLE_API_KEY=your_gemini_api_key_here
-SECRET_KEY=generate_a_random_32_byte_hex_key
+JWT_SECRET_KEY=generate_a_random_32_byte_hex_key
 ADMIN_PASSWORD=your_secure_password
 ```
 
