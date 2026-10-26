@@ -1,9 +1,15 @@
+import os
+import sys
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+
+# Ensure backend directory is in Python path for model imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -15,7 +21,10 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from sqlmodel import SQLModel
-import database  # ensure all models (User, Farm, DecisionLog, ValveCommand, AlertLog) are loaded
+try:
+    import database
+except ImportError:
+    from backend import database
 
 target_metadata = SQLModel.metadata
 

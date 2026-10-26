@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-src = ["."]
+src = [".", "backend"]
 
 [tool.ruff.lint]
 select = [
@@ -34,7 +34,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["config", "graph", "nodes", "state", "memory", "database", "security", "mcp_server"]
+known-first-party = ["backend", "config", "graph", "nodes", "state", "memory", "database", "security", "mcp_server"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -47,8 +47,9 @@ line-ending = "lf"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = [".", "backend"]
 addopts = [
-    "--cov=.",
+    "--cov=backend",
     "--cov-report=term-missing",
     "--cov-report=html:htmlcov",
     "--cov-fail-under=70",           # Fail the CI build if coverage drops below 70%
