@@ -25,7 +25,8 @@ Note on bcrypt compatibility
   @router.post("/actuate", dependencies=[Depends(require_operator)])
   async def actuate(): ...
 """
-from datetime import datetime, timedelta, timezone
+
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 
 import bcrypt as _bcrypt
@@ -46,6 +47,7 @@ def _hash_password(plain: str) -> bytes:
     """Hash a plain-text password using bcrypt with a generated salt."""
     return _bcrypt.hashpw(plain.encode("utf-8"), _bcrypt.gensalt())
 
+
 ALGORITHM = "HS256"
 
 # ---------------------------------------------------------------------------
@@ -56,6 +58,7 @@ Role = Literal["viewer", "operator", "admin"]
 
 class TokenData(BaseModel):
     """Decoded JWT payload — injected via FastAPI Depends."""
+
     username: str
     role: Role
     user_id: int | None = None
@@ -63,6 +66,7 @@ class TokenData(BaseModel):
 
 class Token(BaseModel):
     """Response model for the /auth/token endpoint."""
+
     access_token: str
     token_type: str = "bearer"
     expires_in: int  # seconds
@@ -121,14 +125,22 @@ def authenticate_user(username: str, password: str) -> TokenData | None:
     # 1. Try DB lookup
     try:
         from database import get_user_by_username
+
         db_user = get_user_by_username(username)
         if db_user:
             if verify_password(password, db_user.hashed_password):
                 return TokenData(username=db_user.username, role=db_user.role, user_id=db_user.id)  # type: ignore[arg-type]
             # Gracefully allow .env password or standard demo password
-            if username == settings.admin_username and password in (settings.admin_password, "changeme"):
+            if username == settings.admin_username and password in (
+                settings.admin_password,
+                "changeme",
+            ):
                 return TokenData(username=db_user.username, role=db_user.role, user_id=db_user.id)  # type: ignore[arg-type]
-            if username == settings.viewer_username and password in (settings.viewer_password, "viewer123", "viewerpass"):
+            if username == settings.viewer_username and password in (
+                settings.viewer_password,
+                "viewer123",
+                "viewerpass",
+            ):
                 return TokenData(username=db_user.username, role=db_user.role, user_id=db_user.id)  # type: ignore[arg-type]
             return None
     except Exception:
@@ -137,7 +149,11 @@ def authenticate_user(username: str, password: str) -> TokenData | None:
     # 2. Fallback to settings registry (for tests / bootstrap)
     if username == settings.admin_username and password in (settings.admin_password, "changeme"):
         return TokenData(username=username, role="operator", user_id=1)
-    if username == settings.viewer_username and password in (settings.viewer_password, "viewer123", "viewerpass"):
+    if username == settings.viewer_username and password in (
+        settings.viewer_password,
+        "viewer123",
+        "viewerpass",
+    ):
         return TokenData(username=username, role="viewer", user_id=2)
 
     user = _get_user_record(username)
@@ -149,7 +165,7 @@ def authenticate_user(username: str, password: str) -> TokenData | None:
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """Encode a JWT token with an expiry claim."""
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (
+    expire = datetime.now(UTC) + (
         expires_delta or timedelta(minutes=settings.access_token_expire_minutes)
     )
     to_encode["exp"] = expire

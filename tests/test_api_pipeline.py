@@ -2,12 +2,13 @@
 Integration tests for the full FastAPI pipeline, authentication, multi-tenancy,
 observability, and valve tracking endpoints.
 """
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from api import app
 from config import settings
-from database import create_db_and_tables, Farm, create_farm, DecisionLog, save_decision_log
+from database import DecisionLog, create_db_and_tables, save_decision_log
 
 
 @pytest.fixture(autouse=True)
@@ -75,6 +76,7 @@ class TestHealthAndObservabilityEndpoints:
 
     async def test_langsmith_diagnostics(self):
         from security import create_access_token
+
         token = create_access_token({"sub": settings.viewer_username, "role": "viewer"})
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
@@ -94,6 +96,7 @@ class TestMultiTenancyFarms:
 
     async def test_farm_lifecycle(self):
         from security import create_access_token
+
         op_token = create_access_token({"sub": settings.admin_username, "role": "operator"})
         view_token = create_access_token({"sub": settings.viewer_username, "role": "viewer"})
 
@@ -158,6 +161,7 @@ class TestValvesAndAlertsEndpoints:
 
     async def test_valves_and_emergency_stop(self):
         from security import create_access_token
+
         op_token = create_access_token({"sub": settings.admin_username, "role": "operator"})
         view_token = create_access_token({"sub": settings.viewer_username, "role": "viewer"})
 
@@ -172,6 +176,7 @@ class TestValvesAndAlertsEndpoints:
 
             # Persist a valve command and query it
             from mcp_server import irrigate_valve
+
             valve_ack = irrigate_valve(
                 crop_type="Wheat",
                 volume_liters=3000.0,
@@ -196,8 +201,9 @@ class TestValvesAndAlertsEndpoints:
             assert res.json()["status"] == "success"
 
     async def test_alerts_and_acknowledgement(self):
-        from security import create_access_token
         from alerting import dispatch_alert
+        from security import create_access_token
+
         view_token = create_access_token({"sub": settings.viewer_username, "role": "viewer"})
 
         # Dispatch test alert
@@ -231,6 +237,7 @@ class TestAnalyticsAndFeedback:
 
     async def test_history_and_stats(self):
         from security import create_access_token
+
         view_token = create_access_token({"sub": settings.viewer_username, "role": "viewer"})
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
@@ -250,6 +257,7 @@ class TestAnalyticsAndFeedback:
 
     async def test_feedback_submission(self):
         from security import create_access_token
+
         view_token = create_access_token({"sub": settings.viewer_username, "role": "viewer"})
 
         # Save a test decision log
@@ -288,6 +296,7 @@ class TestAnalyticsAndFeedback:
 
     async def test_scheduler_run_and_farm_deletion(self):
         from security import create_access_token
+
         admin_token = create_access_token({"sub": settings.admin_username, "role": "admin"})
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:

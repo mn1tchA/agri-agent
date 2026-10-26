@@ -5,11 +5,14 @@ Runs the multi-agent pipeline locally and simulates human approval.
 Usage:
     python main.py
 """
+
 import asyncio
 import logging
+
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-from graph import create_workflow
+
 from config import settings
+from graph import create_workflow
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,9 +48,12 @@ async def main():
         log.info("--- Phase 1: Starting Execution ---")
         async for s in app.astream(initial_state, config=config, stream_mode="values"):
             if s.get("decision") and not s.get("human_approved"):
-                log.info("SWARM PAUSED — Decision: %s | Volume: %.0fL | Cost: %.2f DZD",
-                         s.get("decision"), s.get("water_volume_liters", 0),
-                         s.get("financial_cost_dzd", 0))
+                log.info(
+                    "SWARM PAUSED — Decision: %s | Volume: %.0fL | Cost: %.2f DZD",
+                    s.get("decision"),
+                    s.get("water_volume_liters", 0),
+                    s.get("financial_cost_dzd", 0),
+                )
                 break
 
         log.info("--- Phase 2: Simulating Human Approval ---")

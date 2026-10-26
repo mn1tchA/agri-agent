@@ -7,10 +7,8 @@ Supports:
 - Outbound Webhook dispatch (HTTP POST)
 - In-app notification feeds
 """
+
 import logging
-import smtplib
-from email.message import EmailMessage
-from typing import Optional
 
 import httpx
 
@@ -24,7 +22,7 @@ async def dispatch_alert(
     message: str,
     severity: str = "WARNING",
     alert_type: str = "ANOMALY",
-    farm_id: Optional[int] = None,
+    farm_id: int | None = None,
     channel: str = "IN_APP",
 ) -> AlertLog:
     """
@@ -47,7 +45,9 @@ async def dispatch_alert(
         acknowledged=False,
     )
     saved = save_alert_log(alert_entry)
-    log.warning("🚨 [ALERT DISPATCHED] [%s] %s (Farm #%s): %s", severity, alert_type, farm_id, message)
+    log.warning(
+        "🚨 [ALERT DISPATCHED] [%s] %s (Farm #%s): %s", severity, alert_type, farm_id, message
+    )
 
     # 2. Outbound Webhook if configured
     if settings.alert_webhook_url:

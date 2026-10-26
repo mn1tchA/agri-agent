@@ -14,11 +14,19 @@ Usage:
         async with Client(irrigation_mcp) as client:
             result = await client.call_tool("irrigate_valve", {...})
 """
-import json
+
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastmcp import FastMCP
+
+from database import (
+    ValveCommand,
+    emergency_stop_all_valves,
+    get_valve_command,
+    list_valve_commands,
+    save_valve_command,
+)
 
 log = logging.getLogger("agri_agent.mcp_server")
 
@@ -35,13 +43,6 @@ mcp = FastMCP(
     ),
 )
 
-from database import (
-    ValveCommand,
-    emergency_stop_all_valves,
-    get_valve_command,
-    list_valve_commands,
-    save_valve_command,
-)
 
 # ---------------------------------------------------------------------------
 # Tool 1 — irrigate_valve
@@ -72,7 +73,7 @@ def irrigate_valve(
     Returns:
         Hardware acknowledgement dict with status, command_id, and UTC timestamp.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     command_id = f"CMD-{thread_id[:8].upper()}-{int(now.timestamp())}"
     dilution = "ACTIVE" if water_salinity > 4.0 else "INACTIVE"
 
@@ -94,7 +95,10 @@ def irrigate_valve(
 
     log.info(
         "MCP irrigate_valve (persisted) | id=%s | %.0fL → %s | salinity=%.1f dS/m",
-        command_id, volume_liters, valve_record.target_coordinates, water_salinity,
+        command_id,
+        volume_liters,
+        valve_record.target_coordinates,
+        water_salinity,
     )
     return {
         "status": "EXECUTED",
@@ -140,7 +144,7 @@ def get_valve_status(command_id: str) -> dict:
             "timestamp_utc": record.timestamp_utc.isoformat(),
             "valve_state": "OPEN" if record.status == "EXECUTED" else "CLOSED",
             "farm_id": record.farm_id,
-            "query_time_utc": datetime.now(timezone.utc).isoformat(),
+            "query_time_utc": datetime.now(UTC).isoformat(),
         }
     return {
         "status": "NOT_FOUND",
@@ -164,14 +168,16 @@ def emergency_stop(reason: str, thread_id: str) -> dict:
     Returns:
         Emergency stop acknowledgement dict.
     """
-    timestamp = datetime.now(timezone.utc).isoformat()
+    timestamp = datetime.now(UTC).isoformat()
     affected_count = emergency_stop_all_valves()
     recent = list_valve_commands(limit=20)
     affected_ids = [v.command_id for v in recent if v.status == "STOPPED"]
 
     log.warning(
         "MCP EMERGENCY_STOP | thread=%s | reason=%s | valves_closed=%d",
-        thread_id[:8], reason, affected_count,
+        thread_id[:8],
+        reason,
+        affected_count,
     )
     return {
         "status": "EMERGENCY_STOP_EXECUTED",

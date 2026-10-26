@@ -1,7 +1,7 @@
 """
 Unit tests for the observability module (Prometheus metrics, OpenTelemetry, LangSmith).
 """
-import pytest
+
 from api import app
 from observability import (
     ANALYSIS_RUNS_TOTAL,
@@ -11,7 +11,6 @@ from observability import (
     get_langsmith_status,
     get_tracer,
     setup_opentelemetry,
-    setup_prometheus,
 )
 
 

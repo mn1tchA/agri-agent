@@ -20,18 +20,21 @@ human_approval_gate               parallel_agents_fanout   ← pass-through
                                           ├── "wait"     → END
                                           └── "irrigate" → human_approval_gate → actuator → END
 """
+
 import logging
-from langgraph.graph import StateGraph, END
-from state import FarmState
+
+from langgraph.graph import END, StateGraph
+
 from nodes import (
-    data_aggregation_node,
-    anomaly_check_node,
-    parallel_agents_fanout,
-    meteorologist_agent_node,
-    botanist_agent_node,
-    financial_agent_node,
     actuator_node,
+    anomaly_check_node,
+    botanist_agent_node,
+    data_aggregation_node,
+    financial_agent_node,
+    meteorologist_agent_node,
+    parallel_agents_fanout,
 )
+from state import FarmState
 
 log = logging.getLogger("agri_agent.graph")
 
@@ -39,6 +42,7 @@ log = logging.getLogger("agri_agent.graph")
 # ---------------------------------------------------------------------------
 # Routing Functions
 # ---------------------------------------------------------------------------
+
 
 def route_decision(state: FarmState) -> str:
     """Route after the Financial Director: irrigate → human gate, wait → END."""
@@ -66,6 +70,7 @@ def route_after_anomaly_check(state: FarmState) -> str:
 # HITL Gate Node
 # ---------------------------------------------------------------------------
 
+
 async def human_approval_gate(state: FarmState) -> dict:
     """
     Empty node acting as a LangGraph interrupt breakpoint.
@@ -84,19 +89,20 @@ async def human_approval_gate(state: FarmState) -> dict:
 # Workflow Factory
 # ---------------------------------------------------------------------------
 
+
 def create_workflow() -> StateGraph:
     """Build and return the compiled Agri-Agent workflow graph."""
     workflow = StateGraph(FarmState)
 
     # --- Register Nodes ---
-    workflow.add_node("data_aggregation",      data_aggregation_node)
-    workflow.add_node("anomaly_check",         anomaly_check_node)
+    workflow.add_node("data_aggregation", data_aggregation_node)
+    workflow.add_node("anomaly_check", anomaly_check_node)
     workflow.add_node("parallel_agents_fanout", parallel_agents_fanout)
-    workflow.add_node("meteorologist",         meteorologist_agent_node)
-    workflow.add_node("botanist",              botanist_agent_node)
-    workflow.add_node("financial",             financial_agent_node)
-    workflow.add_node("human_approval_gate",   human_approval_gate)
-    workflow.add_node("actuator",              actuator_node)
+    workflow.add_node("meteorologist", meteorologist_agent_node)
+    workflow.add_node("botanist", botanist_agent_node)
+    workflow.add_node("financial", financial_agent_node)
+    workflow.add_node("human_approval_gate", human_approval_gate)
+    workflow.add_node("actuator", actuator_node)
 
     # --- Entry Point ---
     workflow.set_entry_point("data_aggregation")
@@ -110,7 +116,7 @@ def create_workflow() -> StateGraph:
         route_after_anomaly_check,
         {
             "parallel_agents_fanout": "parallel_agents_fanout",
-            "human_approval_gate":    "human_approval_gate",
+            "human_approval_gate": "human_approval_gate",
         },
     )
 
@@ -120,7 +126,7 @@ def create_workflow() -> StateGraph:
 
     # --- Fan-In: both agents → financial (waits for both to complete) ---
     workflow.add_edge("meteorologist", "financial")
-    workflow.add_edge("botanist",      "financial")
+    workflow.add_edge("botanist", "financial")
 
     # --- Conditional routing after Financial Director ---
     workflow.add_conditional_edges(
@@ -136,7 +142,5 @@ def create_workflow() -> StateGraph:
     workflow.add_edge("human_approval_gate", "actuator")
     workflow.add_edge("actuator", END)
 
-    log.info(
-        "Workflow graph compiled: anomaly detection + conditional fan-out + parallel agents"
-    )
+    log.info("Workflow graph compiled: anomaly detection + conditional fan-out + parallel agents")
     return workflow

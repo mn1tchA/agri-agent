@@ -1,14 +1,15 @@
 """
 FarmState — the single source of truth flowing through the LangGraph pipeline.
 """
-from typing import TypedDict, Optional
+
+from typing import TypedDict
 
 
 class FarmState(TypedDict):
     # --- Pipeline Run Identity ---
-    thread_id: str             # pipeline run ID for MCP audit tracing
-    farm_id: Optional[int]     # multi-tenant farm ID
-    user_id: Optional[int]     # initiating user ID
+    thread_id: str  # pipeline run ID for MCP audit tracing
+    farm_id: int | None  # multi-tenant farm ID
+    user_id: int | None  # initiating user ID
 
     # --- Farm Identity & Location ---
     crop_type: str
@@ -18,12 +19,12 @@ class FarmState(TypedDict):
 
     # --- User-Configurable Sensor Inputs ---
     target_moisture_threshold: float
-    water_salinity: float          # dS/m — user provided or sensor
-    plant_growth_stage: str        # e.g. "Vegetative Stage (High Water Demand)"
+    water_salinity: float  # dS/m — user provided or sensor
+    plant_growth_stage: str  # e.g. "Vegetative Stage (High Water Demand)"
 
     # --- Live Sensor / API Data ---
-    soil_moisture: float           # % — from open-meteo
-    temperature: float             # °C — from open-meteo
+    soil_moisture: float  # % — from open-meteo
+    temperature: float  # °C — from open-meteo
     satellite_water_productivity: float
 
     # --- Forecasting ---
@@ -36,10 +37,10 @@ class FarmState(TypedDict):
 
     # --- AI Reasoning (Botanist structured output) ---
     biological_reasoning: str
-    reasoning_confidence: float    # 0.0–1.0
+    reasoning_confidence: float  # 0.0-1.0
 
     # --- Decision Engine Outputs ---
-    decision: str                  # "irrigate" | "wait" | "error"
+    decision: str  # "irrigate" | "wait" | "error"
     water_volume_liters: float
     nutrient_mix: str
     financial_cost_dzd: float
@@ -47,10 +48,10 @@ class FarmState(TypedDict):
 
     # --- Anomaly Detection ---
     anomaly_detected: bool  # True if critical sensor anomaly detected by anomaly_check_node
-    anomaly_reason: str     # Human-readable description of the detected anomaly
+    anomaly_reason: str  # Human-readable description of the detected anomaly
 
     # --- Human-in-the-Loop ---
-    human_approved: Optional[bool]
+    human_approved: bool | None
 
     # --- Actuation ---
     actuator_message: str

@@ -2,6 +2,7 @@
 Centralized application configuration using pydantic-settings.
 All settings are loaded from environment variables / .env file.
 """
+
 import logging
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -20,8 +21,8 @@ class Settings(BaseSettings):
     )
 
     # --- API Keys ---
-    google_api_key: str = ""   # Used for embeddings (RAG memory)
-    groq_api_key: str = ""     # Used for LLM inference — get free key at console.groq.com
+    google_api_key: str = ""  # Used for embeddings (RAG memory)
+    groq_api_key: str = ""  # Used for LLM inference — get free key at console.groq.com
 
     # --- LLM Backend ---
     # Set LLM_PROVIDER=groq in .env to use Groq (recommended — much higher free limits).
@@ -46,7 +47,9 @@ class Settings(BaseSettings):
     chroma_persist_dir: str = "./chroma_db"
 
     # --- CORS ---
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:80,http://127.0.0.1:80"
+    cors_origins: str = (
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:80,http://127.0.0.1:80"
+    )
 
     # --- JWT Authentication ---
     # Generate a strong secret with: python -c "import secrets; print(secrets.token_hex(32))"
@@ -85,7 +88,7 @@ class Settings(BaseSettings):
         if self.jwt_secret_key == _INSECURE_JWT_SENTINEL:
             log.critical(
                 "⚠️  JWT_SECRET_KEY is using the insecure default! "
-                "Generate a real secret: python -c \"import secrets; print(secrets.token_hex(32))\" "
+                'Generate a real secret: python -c "import secrets; print(secrets.token_hex(32))" '
                 "and set JWT_SECRET_KEY in your .env file."
             )
         if self.admin_password in ("changeme", "password", "admin", ""):
@@ -96,4 +99,3 @@ class Settings(BaseSettings):
 
 # Singleton instance — import this everywhere
 settings = Settings()
-

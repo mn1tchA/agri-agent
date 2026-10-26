@@ -11,20 +11,21 @@ Features:
   - Full Observability: OpenTelemetry tracing + Prometheus /metrics + LangSmith LLM cost tracking
   - LangGraph human-in-the-loop state machine with SSE streaming
 """
+
 import asyncio
 import json
 import logging
 import uuid
 from contextlib import asynccontextmanager
 from datetime import timedelta
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field, field_validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -32,10 +33,8 @@ from slowapi.util import get_remote_address
 
 from config import settings
 from database import (
-    AlertLog,
     DecisionLog,
     Farm,
-    ValveCommand,
     acknowledge_alert,
     create_db_and_tables,
     create_farm,
@@ -124,7 +123,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 app.add_middleware(
     CORSMiddleware,
@@ -143,6 +142,7 @@ setup_prometheus(app)
 # Request / Response Models
 # ---------------------------------------------------------------------------
 
+
 class FarmCreatePayload(BaseModel):
     name: str = "My Farm"
     crop_type: str = "Wheat"
@@ -156,20 +156,21 @@ class FarmCreatePayload(BaseModel):
 
 
 class FarmUpdatePayload(BaseModel):
-    name: Optional[str] = None
-    crop_type: Optional[str] = None
-    farm_area_sqm: Optional[float] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    moisture_threshold: Optional[float] = None
-    water_salinity: Optional[float] = None
-    plant_growth_stage: Optional[str] = None
-    auto_irrigate_enabled: Optional[bool] = None
+    name: str | None = None
+    crop_type: str | None = None
+    farm_area_sqm: float | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    moisture_threshold: float | None = None
+    water_salinity: float | None = None
+    plant_growth_stage: str | None = None
+    auto_irrigate_enabled: bool | None = None
 
 
 class ConfigPayload(BaseModel):
     """Input parameters for a new farm analysis run."""
-    farm_id: Optional[int] = None
+
+    farm_id: int | None = None
     crop_type: str = "Wheat"
     farm_area_sqm: Annotated[float, Field(gt=0, le=10_000_000)] = 10_000.0
     target_moisture_threshold: Annotated[float, Field(ge=0, le=100)] = 10.0
@@ -206,7 +207,7 @@ class ConfigPayload(BaseModel):
 class ApprovalRequest(BaseModel):
     thread_id: str
     is_approved: bool
-    farm_id: Optional[int] = None
+    farm_id: int | None = None
 
 
 class FeedbackRequest(BaseModel):
@@ -245,6 +246,7 @@ v1 = APIRouter(prefix="/api/v1", tags=["v1"])
 
 # ── Auth ────────────────────────────────────────────────────────────────────
 
+
 @v1.post(
     "/auth/token",
     response_model=Token,
@@ -275,6 +277,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> T
 
 
 # ── Multi-Tenancy Farms ──────────────────────────────────────────────────────
+
 
 @v1.get("/farms", response_model=list[dict], summary="List farms for user", tags=["Farms"])
 async def list_farms(
@@ -354,6 +357,7 @@ async def delete_existing_farm(
 
 # ── Analysis ─────────────────────────────────────────────────────────────────
 
+
 @v1.post(
     "/analyze",
     summary="Start a new farm analysis (SSE stream)",
@@ -384,7 +388,11 @@ async def run_analysis(
 
     log.info(
         "Starting analysis | user=%s | thread=%s | farm_id=%s | crop=%s | area=%.0fm²",
-        _current_user.username, thread_id[:8], payload.farm_id, payload.crop_type, payload.farm_area_sqm,
+        _current_user.username,
+        thread_id[:8],
+        payload.farm_id,
+        payload.crop_type,
+        payload.farm_area_sqm,
     )
 
     agent_app = request.app.state.agent_app
@@ -409,7 +417,7 @@ async def run_analysis(
             fallback = {**initial_state, "thread_id": thread_id}
             fallback["meteorologist_analysis"] = "⚠️ API error — please wait 60 seconds and retry."
             fallback["botanist_analysis"] = "⚠️ API error — please wait 60 seconds and retry."
-            fallback["financial_analysis"] = f"Error: {str(e)}"
+            fallback["financial_analysis"] = f"Error: {e!s}"
             fallback["decision"] = "error"
             yield f"data: {json.dumps(fallback)}\n\n"
 
@@ -426,6 +434,7 @@ async def run_analysis(
 
 # ── Actuation ─────────────────────────────────────────────────────────────────
 
+
 @v1.post(
     "/actuate",
     response_model=ActuateResponse,
@@ -441,7 +450,9 @@ async def execute_hardware(
     config = {"configurable": {"thread_id": approval.thread_id}}
     log.info(
         "Actuation | user=%s | thread=%s | approved=%s",
-        _current_user.username, approval.thread_id[:8], approval.is_approved,
+        _current_user.username,
+        approval.thread_id[:8],
+        approval.is_approved,
     )
 
     agent_app = request.app.state.agent_app
@@ -480,7 +491,9 @@ async def execute_hardware(
 
     # Record Prometheus metrics
     if approval.is_approved and log_entry.water_volume_liters > 0:
-        IRRIGATION_VOLUME_LITERS.labels(crop_type=log_entry.crop_type).inc(log_entry.water_volume_liters)
+        IRRIGATION_VOLUME_LITERS.labels(crop_type=log_entry.crop_type).inc(
+            log_entry.water_volume_liters
+        )
         VALVE_COMMANDS_TOTAL.labels(command="OPEN_VALVE", status="EXECUTED").inc()
 
     # Save to RAG vector memory
@@ -497,13 +510,17 @@ async def execute_hardware(
                 f"Conditions: moisture={moisture:.1f}%, temp={temp}°C, salinity={salinity} dS/m. "
                 f"Botanist: {final_result.get('botanist_analysis', '')[:200]}"
             )
-            add_memory(mem_text, {"thread_id": approval.thread_id, "action": "irrigate", "crop_type": crop})
+            add_memory(
+                mem_text, {"thread_id": approval.thread_id, "action": "irrigate", "crop_type": crop}
+            )
         elif decision == "irrigate" and not approval.is_approved:
             mem_text = (
                 f"IRRIGATION REJECTED by operator for {crop}. "
                 f"Conditions: moisture={moisture:.1f}%, temp={temp}°C, salinity={salinity} dS/m."
             )
-            add_memory(mem_text, {"thread_id": approval.thread_id, "action": "rejected", "crop_type": crop})
+            add_memory(
+                mem_text, {"thread_id": approval.thread_id, "action": "rejected", "crop_type": crop}
+            )
     except Exception as e:
         log.warning("Memory persistence failed: %s", e)
 
@@ -517,9 +534,10 @@ async def execute_hardware(
 
 # ── Hardware Actuator Valves ──────────────────────────────────────────────────
 
+
 @v1.get("/valves", response_model=list[dict], summary="List valve commands", tags=["Valves"])
 async def list_valves(
-    farm_id: Optional[int] = None,
+    farm_id: int | None = None,
     limit: int = 50,
     _current_user: Annotated[TokenData, Depends(require_viewer)] = None,
 ) -> list[dict]:
@@ -542,7 +560,12 @@ async def get_single_valve(
     return cmd.model_dump()
 
 
-@v1.post("/valves/emergency-stop", response_model=dict, summary="Emergency stop all valves", tags=["Valves"])
+@v1.post(
+    "/valves/emergency-stop",
+    response_model=dict,
+    summary="Emergency stop all valves",
+    tags=["Valves"],
+)
 async def trigger_emergency_stop(
     _current_user: Annotated[TokenData, Depends(require_operator)],
 ) -> dict:
@@ -555,9 +578,10 @@ async def trigger_emergency_stop(
 
 # ── Alerts & Scheduled Analysis ───────────────────────────────────────────────
 
+
 @v1.get("/alerts", response_model=list[dict], summary="List anomaly alerts", tags=["Alerts"])
 async def list_alerts(
-    farm_id: Optional[int] = None,
+    farm_id: int | None = None,
     limit: int = 50,
     _current_user: Annotated[TokenData, Depends(require_viewer)] = None,
 ) -> list[dict]:
@@ -567,7 +591,9 @@ async def list_alerts(
     return [a.model_dump() for a in alerts]
 
 
-@v1.post("/alerts/{alert_id}/ack", response_model=dict, summary="Acknowledge alert", tags=["Alerts"])
+@v1.post(
+    "/alerts/{alert_id}/ack", response_model=dict, summary="Acknowledge alert", tags=["Alerts"]
+)
 async def ack_alert(
     alert_id: int,
     _current_user: Annotated[TokenData, Depends(require_viewer)],
@@ -580,7 +606,12 @@ async def ack_alert(
     return {"status": "success", "alert_id": alert_id}
 
 
-@v1.post("/scheduler/run-now", response_model=dict, summary="Trigger instant farm check", tags=["Scheduler"])
+@v1.post(
+    "/scheduler/run-now",
+    response_model=dict,
+    summary="Trigger instant farm check",
+    tags=["Scheduler"],
+)
 async def run_scheduler_now(
     _current_user: Annotated[TokenData, Depends(require_operator)],
 ) -> dict:
@@ -591,7 +622,13 @@ async def run_scheduler_now(
 
 # ── Observability & LangSmith ────────────────────────────────────────────────
 
-@v1.get("/observability/langsmith", response_model=dict, summary="LangSmith tracing status", tags=["Observability"])
+
+@v1.get(
+    "/observability/langsmith",
+    response_model=dict,
+    summary="LangSmith tracing status",
+    tags=["Observability"],
+)
 async def langsmith_status(
     _current_user: Annotated[TokenData, Depends(require_viewer)],
 ) -> dict:
@@ -601,6 +638,7 @@ async def langsmith_status(
 
 # ── Analytics ─────────────────────────────────────────────────────────────────
 
+
 @v1.get(
     "/history",
     response_model=HistoryResponse,
@@ -608,13 +646,13 @@ async def langsmith_status(
     tags=["Analytics"],
 )
 async def get_history(
-    farm_id: Optional[int] = None,
+    farm_id: int | None = None,
     _current_user: Annotated[TokenData, Depends(require_viewer)] = None,
 ) -> HistoryResponse:
     """Return decision logs, optionally filtered by farm_id."""
     loop = asyncio.get_running_loop()
     logs = await loop.run_in_executor(None, get_all_decision_logs, farm_id)
-    return HistoryResponse(history=[l.model_dump() for l in logs])
+    return HistoryResponse(history=[entry.model_dump() for entry in logs])
 
 
 @v1.get(
@@ -624,7 +662,7 @@ async def get_history(
     tags=["Analytics"],
 )
 async def get_stats(
-    farm_id: Optional[int] = None,
+    farm_id: int | None = None,
     _current_user: Annotated[TokenData, Depends(require_viewer)] = None,
 ) -> dict:
     """Return aggregate statistics for the analytics dashboard, optionally per farm."""
@@ -642,7 +680,7 @@ async def submit_feedback(
     feedback: FeedbackRequest,
     _current_user: Annotated[TokenData, Depends(require_viewer)],
 ) -> FeedbackResponse:
-    """Submit an outcome rating (1–5 stars) for a completed decision."""
+    """Submit an outcome rating (1-5 stars) for a completed decision."""
     loop = asyncio.get_running_loop()
     success = await loop.run_in_executor(
         None, update_outcome_rating, feedback.log_id, feedback.rating
@@ -668,6 +706,7 @@ app.include_router(v1)
 async def health_check() -> HealthResponse:
     """Unauthenticated endpoint for Docker health checks."""
     from scheduler import scheduler
+
     return HealthResponse(
         status="healthy",
         version=app.version,
@@ -687,22 +726,26 @@ async def metrics_endpoint() -> Response:
 @app.post("/api/analyze", include_in_schema=False)
 @limiter.limit("10/minute")
 async def _compat_analyze(request: Request, payload: ConfigPayload) -> StreamingResponse:
-    return await run_analysis(request, payload, TokenData(username="compat", role="operator", user_id=1))
+    return await run_analysis(
+        request, payload, TokenData(username="compat", role="operator", user_id=1)
+    )
 
 
 @app.post("/api/actuate", include_in_schema=False)
 async def _compat_actuate(request: Request, approval: ApprovalRequest):
-    return await execute_hardware(request, approval, TokenData(username="compat", role="operator", user_id=1))
+    return await execute_hardware(
+        request, approval, TokenData(username="compat", role="operator", user_id=1)
+    )
 
 
 @app.get("/api/history", include_in_schema=False)
-async def _compat_history(farm_id: Optional[int] = None):
+async def _compat_history(farm_id: int | None = None):
     res = await get_history(farm_id)
     return res.model_dump()
 
 
 @app.get("/api/stats", include_in_schema=False)
-async def _compat_stats(farm_id: Optional[int] = None):
+async def _compat_stats(farm_id: int | None = None):
     return await get_stats(farm_id)
 
 
