@@ -99,6 +99,44 @@ This system is directly inspired by the **Gardens of Babylon** project in **Masc
 
 ---
 
+## 📂 Project Structure
+
+```
+agri-agent/
+├── .github/workflows/       # GitHub Actions CI/CD pipeline
+├── alembic/                 # Versioned database migration scripts
+├── backend/                 # Enterprise FastAPI backend & multi-agent swarm
+│   ├── alerting.py          # Multi-channel notification engine (email, webhook, DB)
+│   ├── api.py               # FastAPI router, lifespan & API endpoints (/api/v1/*)
+│   ├── config.py            # Typed settings via pydantic-settings
+│   ├── database.py          # SQLModel models & CRUD persistence
+│   ├── graph.py             # LangGraph stateful swarm workflow
+│   ├── main.py              # CLI entrypoint
+│   ├── mcp_server.py        # FastMCP hardware actuation server
+│   ├── memory.py            # ChromaDB vector RAG memory
+│   ├── nodes.py             # Swarm agent nodes (Meteorologist, Botanist, Financial)
+│   ├── observability.py     # Prometheus metrics & OpenTelemetry tracing
+│   ├── scheduler.py         # APScheduler periodic farm surveillance
+│   ├── security.py          # OAuth2 JWT & role-based access control (RBAC)
+│   └── state.py             # LangGraph FarmState typed dictionary
+├── agri-dashboard/          # Modern React 19 + TypeScript Frontend
+│   ├── src/
+│   │   ├── api/             # Typed API client with JWT bearer interceptors
+│   │   ├── components/      # UI components (Header, FarmConfig, Timeline, etc.)
+│   │   ├── pages/           # Dedicated pages (Login, Dashboard, Analytics, Farms)
+│   │   ├── store/           # Zustand state management (authStore, farmStore)
+│   │   └── types/           # TypeScript interfaces & types
+├── scripts/                 # Utility & manual verification scripts
+├── tests/                   # Pytest test suite (77 tests, >=70% coverage gate)
+├── docker-compose.yml       # Production multi-container orchestration
+├── Dockerfile.backend       # Optimized Python backend container
+├── Dockerfile.frontend      # Multi-stage Node.js build with Nginx SPA routing
+├── pyproject.toml           # Tool configs (Ruff, Mypy, Pytest, Coverage)
+└── requirements.txt         # Pinned Python dependencies
+```
+
+---
+
 ## 🚀 Quick Start
 
 ### 1. Configure Environment
@@ -130,7 +168,7 @@ alembic upgrade head
 **Terminal 1 — Backend:**
 ```bash
 pip install -r requirements.txt
-uvicorn api:app --reload --port 8000
+uvicorn api:app --app-dir backend --reload --port 8000
 ```
 
 **Terminal 2 — Frontend:**
