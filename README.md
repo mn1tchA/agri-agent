@@ -30,47 +30,65 @@ Inspired by vertical farming automation initiatives in Mascara, Algeria, Agri-Ag
 
 ## System Architecture
 
-```
-                       ┌─────────────────────────┐
-                       │   IoT Sensors / Meteo   │  Current Temp, Soil Moisture, Salinity,
-                       │   Open-Meteo FAO ET₀    │  3-Day Precipitation Forecast, WaPOR Index
-                       └────────────┬────────────┘
-                                    │
-                       ┌────────────▼────────────┐
-                       │   data_aggregation      │
-                       └────────────┬────────────┘
-                                    │
-                       ┌────────────▼────────────┐
-                       │   anomaly_check_node    │  Deterministic safety gate:
-                       └────────────┬────────────┘  Heat >45°C, Moisture >92% or <1%, Salinity >8
-                                    │
-                  ┌─────────────────┴─────────────────┐
-     [Critical Anomaly]                    [Normal Conditions]
-                  │                                   │
-                  ▼                          ┌────────┴────────┐
-         human_approval_gate                 ▼                 ▼
-          (Emergency Review)            meteorologist       botanist  (+ ChromaDB RAG Memory)
-                  │                          │                 │
-                  │                          └────────┬────────┘
-                  │                                   ▼
-                  │                           financial_director
-                  │                           (Consensus + Cost Matrix)
-                  │                                   │
-                  │                         "wait" ───┴─── "irrigate"
-                  │                           │               │
-                  │                          END              ▼
-                  └───────────────────────────────────► human_approval_gate
-                                                              │
-                                                        [Approved]
-                                                              ▼
-                                                        actuator_node
-                                                              │
-                                                              ▼
-                                                     FastMCP Hardware Tool
-                                                              │
-                                                              ▼
-                                                     SQLite Persistence
-                                                     (Survives reboots)
+```mermaid
+flowchart TD
+    subgraph INGESTION["Ingestion Layer"]
+        SENSORS["IoT Sensors & Meteo API (Temp, Moisture, Salinity, FAO ET0)"]
+        AGG["Data Aggregation Node (Normalization & Calibration)"]
+        SENSORS --> AGG
+    end
+
+    subgraph SAFETY["Deterministic Safety Filter"]
+        CHECK{"Anomaly Check Node (Heat > 45°C | Moisture > 92% or < 1% | Salinity > 8 dS/m)"}
+    end
+
+    subgraph SWARM["Multi-Agent Collaborative Swarm (LangGraph)"]
+        direction TB
+        METEO["Meteorologist Agent (72h Rain & ET0 Evapotranspiration)"]
+        BOTANIST["Botanist Agent (Crop Deficit & Root-zone Diagnosis)"]
+        CHROMA[("ChromaDB Vector Store (Historical RAG Memory)")]
+        FINANCE["Financial Director Agent (Tariff Cost vs Crop Value at Risk)"]
+
+        BOTANIST <--> CHROMA
+        METEO --> FINANCE
+        BOTANIST --> FINANCE
+    end
+
+    subgraph ACTUATION["Physical Actuation & Audit Layer"]
+        HITL["Human-in-the-Loop Gate (Operator Review via API & Dashboard)"]
+        ACTUATOR["Actuator Node (LangGraph Dispatcher)"]
+        MCP["FastMCP Hardware Server (Physical Valve Bridge)"]
+        DB[("SQLite Database (Valve Commands & Audit Log)")]
+
+        HITL -->|"Approved"| ACTUATOR
+        ACTUATOR --> MCP
+        MCP --> DB
+    end
+
+    WAIT_END(["Standby (No Irrigation Required)"])
+
+    %% Inter-subgraph routing
+    AGG --> CHECK
+    CHECK -->|"Critical Anomaly (Bypass LLM Swarm)"| HITL
+    CHECK -->|"Normal Telemetry Conditions"| METEO
+    CHECK -->|"Normal Telemetry Conditions"| BOTANIST
+
+    FINANCE -->|"Decision: wait"| WAIT_END
+    FINANCE -->|"Decision: irrigate"| HITL
+
+    %% Custom Styling
+    style SENSORS fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
+    style AGG fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
+    style CHECK fill:#451a03,stroke:#f59e0b,stroke-width:2px,color:#fef3c7
+    style METEO fill:#172554,stroke:#3b82f6,stroke-width:2px,color:#eff6ff
+    style BOTANIST fill:#052e16,stroke:#10b981,stroke-width:2px,color:#ecfdf5
+    style CHROMA fill:#2e1065,stroke:#8b5cf6,stroke-width:2px,color:#f5f3ff
+    style FINANCE fill:#042f2e,stroke:#14b8a6,stroke-width:2px,color:#f0fdfa
+    style HITL fill:#4c0519,stroke:#f43f5e,stroke-width:2px,color:#fff1f2
+    style ACTUATOR fill:#134e4a,stroke:#2dd4bf,stroke-width:2px,color:#ffffff
+    style MCP fill:#0f172a,stroke:#64748b,stroke-width:2px,color:#f8fafc
+    style DB fill:#1e293b,stroke:#94a3b8,stroke-width:2px,color:#f8fafc
+    style WAIT_END fill:#334155,stroke:#64748b,stroke-width:2px,color:#f8fafc
 ```
 
 ### Execution Lifecycle
