@@ -57,7 +57,7 @@ def main() -> int:
                 print(f"::error title=Pytest Error::{fl}", flush=True)
         else:
             # Emit last 15 lines as fallback annotations
-            for ln in [l.strip() for l in output_lines[-15:] if l.strip()]:
+            for ln in [item.strip() for item in output_lines[-15:] if item.strip()]:
                 print(f"::error title=Pytest Output::{ln}", flush=True)
 
     return retcode

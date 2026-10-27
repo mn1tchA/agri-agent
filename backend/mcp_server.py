@@ -20,6 +20,15 @@ from datetime import UTC, datetime
 
 from fastmcp import FastMCP
 
+# Ensure FastMCP FunctionTool instances remain callable like normal Python functions
+try:
+    from fastmcp.tools import FunctionTool
+
+    if "__call__" not in FunctionTool.__dict__:
+        FunctionTool.__call__ = lambda self, *args, **kwargs: self.fn(*args, **kwargs)  # type: ignore[method-assign]
+except Exception:
+    pass
+
 from database import (
     ValveCommand,
     emergency_stop_all_valves,
