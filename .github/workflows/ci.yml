@@ -15,7 +15,7 @@ concurrency:
 # ---------------------------------------------------------------------------
 env:
   PYTHON_VERSION: "3.11"
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
 
 jobs:
   # ===========================================================================
@@ -88,8 +88,8 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run tests with coverage
-        # pyproject.toml provides: pythonpath=[".","backend"], --cov=backend, --cov-fail-under=68
-        run: pytest tests/ --cov-report=xml -v
+        # pyproject.toml provides: pythonpath=[".","backend"], --cov=backend, --cov-fail-under=65
+        run: python -m pytest tests/ --cov-report=xml:coverage.xml -v
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v4
@@ -137,10 +137,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: agri-dashboard/package-lock.json
+          cache-dependency-path: agri-dashboard/package.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run ESLint
         run: npm run lint
