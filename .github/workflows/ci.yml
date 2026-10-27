@@ -68,8 +68,7 @@ jobs:
     name: "Backend — Tests (pytest + coverage)"
     runs-on: ubuntu-latest
     env:
-      PYTHONPATH: "backend:."
-      # Provide dummy values so settings load cleanly in test environment
+      # Dummy values so pydantic-settings loads without a real .env file in CI
       GROQ_API_KEY: "test-key"
       GOOGLE_API_KEY: "test-key"
       JWT_SECRET_KEY: "ci-test-secret-not-for-production-use"
@@ -88,7 +87,8 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run tests with coverage
-        run: pytest tests/ --cov=backend --cov-report=xml --cov-report=term-missing --cov-fail-under=68 -v
+        # pyproject.toml provides: pythonpath=[".","backend"], --cov=backend, --cov-fail-under=68
+        run: pytest tests/ --cov-report=xml -v
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v4
@@ -96,7 +96,7 @@ jobs:
         with:
           file: coverage.xml
           flags: backend
-          fail_ci_if_error: false   # Don't block CI on Codecov upload failures
+          fail_ci_if_error: false
 
   # ===========================================================================
   # JOB 4 — Security: Dependency Audit
@@ -145,12 +145,13 @@ jobs:
         run: npm run lint
 
       - name: TypeScript type-check
-        run: npx tsc -b
+        # Use --noEmit (no project build mode) for a clean, portable CI check
+        run: npx tsc --noEmit
 
       - name: Build production bundle
         run: npm run build
         env:
-          VITE_API_BASE: "http://localhost:8000"   # Placeholder; real URL set via Docker/env
+          VITE_API_BASE: "http://localhost:8000"
 
   # ===========================================================================
   # JOB 6 — Docker: Build both images

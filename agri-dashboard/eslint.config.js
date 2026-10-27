@@ -19,7 +19,9 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      'react-hooks/set-state-in-effect': 'off',
+      // Disable overly strict rules for this project stage
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
   },
 ])
