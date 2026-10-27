@@ -2,10 +2,17 @@
 Global pytest fixtures and test configuration.
 """
 
+import os
+import sys
 from unittest.mock import MagicMock
 
 import httpx
 import pytest
+
+# Ensure backend package is on sys.path for all runners and platforms
+BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend"))
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
 
 
 @pytest.fixture(autouse=True)

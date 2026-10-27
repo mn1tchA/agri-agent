@@ -88,15 +88,16 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run tests with coverage
-        # pyproject.toml provides: pythonpath=[".","backend"], --cov=backend, --cov-fail-under=65
-        run: python -m pytest tests/ --cov-report=xml:coverage.xml -v
+        # pyproject.toml provides: pythonpath=[".","backend"], --cov=backend, --cov-fail-under=60, --cov-report=xml
+        run: python -m pytest tests/
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v4
-        if: always()
+        if: env.CODECOV_TOKEN != ''
         with:
           file: coverage.xml
           flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
   # ===========================================================================

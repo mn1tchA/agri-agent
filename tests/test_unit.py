@@ -246,10 +246,6 @@ class TestAPIValidation:
     """Tests for ConfigPayload and FeedbackRequest Pydantic validation."""
 
     def test_valid_payload(self):
-        import os
-        import sys
-
-        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
         from api import ConfigPayload
 
         p = ConfigPayload(crop_type="Wheat", farm_area_sqm=10000, latitude=35.0, longitude=-0.5)
