@@ -88,15 +88,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run tests with coverage
-        run: |
-          set +e
-          python -m pytest -v --tb=short 2>&1 | tee pytest_output.txt
-          EXIT_CODE=${PIPESTATUS[0]}
-          echo "### Pytest Run Results (Exit Code: $EXIT_CODE)" >> $GITHUB_STEP_SUMMARY
-          echo '```text' >> $GITHUB_STEP_SUMMARY
-          tail -n 120 pytest_output.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          exit $EXIT_CODE
+        run: python scripts/run_ci_tests.py
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v4
