@@ -2,10 +2,26 @@
 Global pytest fixtures and test configuration.
 """
 
+import os
+import sys
 from unittest.mock import MagicMock
 
 import httpx
 import pytest
+
+# Ensure backend package is on sys.path for all runners and platforms
+BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend"))
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
+
+# Ensure FastMCP FunctionTool instances are callable across all test suites
+try:
+    from fastmcp.tools import FunctionTool
+
+    if "__call__" not in FunctionTool.__dict__:
+        FunctionTool.__call__ = lambda self, *args, **kwargs: self.fn(*args, **kwargs)  # type: ignore[method-assign]
+except Exception:
+    pass
 
 
 @pytest.fixture(autouse=True)

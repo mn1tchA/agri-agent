@@ -35,6 +35,7 @@ alembic>=1.13.0
 
 # --- Vector Store ---
 chromadb==1.5.9
+langchain-chroma>=0.1.4
 
 # --- MCP ---
 fastmcp>=2.0.0
