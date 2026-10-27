@@ -68,6 +68,7 @@ jobs:
     name: "Backend — Tests (pytest + coverage)"
     runs-on: ubuntu-latest
     env:
+      PYTHONPATH: "backend:."
       # Dummy values so pydantic-settings loads without a real .env file in CI
       GROQ_API_KEY: "test-key"
       GOOGLE_API_KEY: "test-key"

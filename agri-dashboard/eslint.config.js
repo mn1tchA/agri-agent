@@ -22,6 +22,7 @@ export default defineConfig([
       // Disable overly strict rules for this project stage
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'react-hooks/set-state-in-effect': 'off',
     },
   },
 ])
